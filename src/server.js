@@ -191,7 +191,7 @@ const start = async () => {
 
     console.log(`see views/form.njk   extends "layout.njk `)
     console.log(`launcg ndoe with npm start  `)
-     console.log(`http://127.0.0.1/ `)
+     console.log(`http://127.0.0.1/3000 `)
 
   } catch (err) {
     fastify.log.error(err)
