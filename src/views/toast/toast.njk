@@ -1,0 +1,460 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+
+    <style>
+        body {
+            background-color: black;
+            color: white;
+        }
+
+        input[type="file"] {
+            height: 50px;
+            background-color: blueviolet;
+            color: white;
+        }
+
+        input[type="file"]::-webkit-file-upload-button {
+            height: 50px;
+            background-color: blueviolet;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0 15px;
+            margin-right: 10px;
+        }
+
+        .bootstrap-select {
+            width: 300px !important;
+        }
+
+        .bootstrap-select1 {
+            width: 240px !important;
+        }
+
+        .info-header {
+            padding: 8px;
+            background-color: rgb(216, 185, 245);
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .message-area {
+            padding: 8px;
+            background-color: rgb(216, 185, 245);
+            border-radius: 4px;
+            margin-top: 15px;
+            min-height: 40px;
+        }
+
+        .custom-btn {
+            border-radius: 15px;
+            font-weight: bold;
+            width: 150px;
+        }
+
+        .login-btn {
+            border-radius: 25px;
+            font-weight: bold;
+            width: 150px;
+        }
+
+        .upload-section {
+            display: none;
+        }
+
+        .upload-section.show {
+            display: block;
+        }
+
+        /* Hide upload section by default*/
+        #uploadFileSection {
+            display: none;
+        }
+    </style>
+    <!-- Datastar handles multipart support automatically -->
+   {# <link rel="stylesheet" href="/public/css/styles/toastStandAlone.css"> #}
+<link rel="stylesheet" href="/public/css/styles/toast.css">
+     
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1>Datastar Toast Notifications & Messages</h1>
+                <div data-signals:count2="2">
+                    <h2>With 0ms delay</h2>
+                    <p>The click handler is evaluated with the correct radio button value, i.e. after the bind has updated the signal.</p>
+                    <label>
+                        <input type="radio" value="1" data-bind:count2 data-on:click__delay.0ms="console.log({ expect: 1, actual: $count2 })">
+                        1
+                    </label>
+                    <label>
+                        <input type="radio" value="2" data-bind:count2 data-on:click__delay.0ms="console.log({ expect: 2, actual: $count2 })">
+                        2
+                    </label>
+                    <label>
+                        <input type="radio" value="3" data-bind:count2 data-on:click__delay.0ms="console.log({ expect: 3, actual: $count2 })">
+                        3
+                    </label>
+                </div>
+                <p>
+                    Based on
+                    <a href="https://jsfiddle.net/jd1zk5t6/">jsfiddle</a>
+                    and
+                    <a href="https://codepen.io/starfederation/pen/wBKPMPx" target="_blank">CodePen</a><br>
+                    Signal-free CSS + Datastar toasts with in/out animations, progress bar, and pause-on-hover.
+                </p>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                    <!-- Debug button to test Datastar click handling -->
+                    <button
+                        data-on:click="console.log('Datastar click works!'); alert('Datastar is working!')"
+                        style="padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; background-color: #FF9800; color: white; border: none;">
+                        Test Datastar Click
+                    </button>
+
+                    <button data-on:click="
+        console.log('Client toast button clicked');
+        const container = document.querySelector('.toast-container');
+        console.log('Container found:', container);
+        const t = document.querySelector('#toast-template');
+        console.log('Template found:', t);
+        if (container && t) {
+          const toastEl = t.content.firstElementChild.cloneNode(true);
+          const msg = window.messages[Math.floor(Math.random() * window.messages.length)];
+          toastEl.querySelector('.toast-body').textContent = 'Toast! ' + msg;
+
+          // Attach vanilla JS event listeners for animations (not Datastar data-on:)
+          const progressBar = toastEl.querySelector('.toast-progress');
+
+          // Handle toast-in animation end
+          toastEl.addEventListener('animationend', (e) => {
+            if (e.animationName?.startsWith('toast-in')) {
+              toastEl.classList.remove('toast-entering');
+              console.log('Toast entered, removed toast-entering class');
+            } else if (e.animationName?.startsWith('toast-out')) {
+              toastEl.remove();
+              console.log('Toast exited and removed from DOM');
+            }
+          });
+
+          // Handle progress bar animation end (triggers exit)
+          progressBar.addEventListener('animationend', (e) => {
+            toastEl.classList.add('toast-leaving');
+            console.log('Progress complete, added toast-leaving class');
+          });
+
+          container.appendChild(toastEl);
+          console.log('Toast added with event listeners!');
+        } else {
+          console.error('Missing container or template!');
+        }
+      " style="padding: 0.5rem 1rem; font-size: 1rem; cCountryursor: pointer; color: blue;">
+                        Show Client Toast
+                    </button>
+
+                    <button data-on:click="@get('/toast/show')" style="padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; color: blue;">
+                        Show Server Toast (SDK)
+                    </button>
+
+                    <button data-on:click="@get('/toast/success')" style="padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; background-color: #4CAF50; color: white; border: none;">
+                        Success Toast 1
+                    </button>
+
+                    <button data-on:click="@get('/toast/error')" style="padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; background-color: #f44336; color: white; border: none;">
+                        Error Toast
+                    </button>
+                </div>
+
+                <!-- CodePen style message cycling section -->
+                <div style="margin-top: 3rem; padding: 2rem; border: 2px solid #ccc; border-radius: 8px;">
+                    <h2>Message Cycling (CodePen Demo)</h2>
+                    <main>
+                        <div id="content" style="font-size: 1.5rem; min-height: 3rem; margin: 1rem 0; padding: 1rem; background-color: black; color: white; border-radius: 4px;">
+                            Hello there!
+                        </div>
+                    </main>
+                    <button data-on:click="@get('/messages/cycle')" style="padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; background-color: #2196F3; color: black; border: none; border-radius: 4px;">
+                        Cycle Messages
+                    </button>
+                </div>
+
+
+    </div>
+
+{# city state drops #}
+<!-- Main dropdown with signal binding -->
+     <div class="row">
+          <div class="col-12">
+
+{# this works#}
+ <div>
+  <label for="country">Country:</label>
+  <select name="country" 
+          id="country"
+          data-on:change="@get('/api/cities?country=' + evt.target.value)">
+    <option value="">Select country...</option>
+    <option value="usa">United States</option>
+    <option value="canada">Canada</option>
+  </select>
+
+  <label for="city">City:</label>
+  <span id="cities-container">
+    <select name="city" disabled>
+      <option>Select country first</option>
+    </select>
+  </span>
+</div> 
+
+
+{# end of select #}
+
+
+
+
+            </div>
+        </div>
+
+
+
+   </div>
+        </div>
+    <!-- Toast container must be outside Bootstrap grid for proper fixed positioning -->
+    <div class="toast-container"></div>
+
+    <template id="toast-template">
+        <div class="toast toast-entering" style="--toast-duration: 5000ms" data-on:animationend="event.animationName?.startsWith('toast-in') && el.classList.remove('toast-entering');event.animationName?.startsWith('toast-out') && el.remove()">
+            <div class="toast-body" style="color: blue;"></div>
+            <div class="toast-progress" data-on:animationend="el.closest('.toast')?.classList.add('toast-leaving')"></div>
+        </div>
+    </template>
+
+    <script>
+        // Messages from CodePen example - available to Datastar
+        window.messages = [
+            "1 Stop overcomplicating it.",
+            "2 Backend controls state.",
+            "3 Props down, Events up.",
+            "4 Flamegraphs don't care about your feelings.",
+            "5 Practice yourself, for heaven's sake, in little things; and thence proceed to greater",
+            "6 Freedom is the only worthy goal in life. It is won by disregarding things that lie beyond our control.",
+            "7 Be the change you want to see.",
+            "https://data-star.dev/ 🚀"
+        ];
+
+        // Debug: Check if Datastar is loaded (after all scripts load)
+        window.addEventListener('load', () => {
+            // Datastar processes data-* attributes automatically
+            // Check if actions are being processed
+            const hasDatastarAttrs = document.querySelector('[data-on\\:click]') !== null;
+            console.log('Datastar elements found:', hasDatastarAttrs);
+            console.log('Page fully loaded - Datastar should be active');
+
+            // Check if CSS is loaded
+            const container = document.querySelector('.toast-container');
+            if (container) {
+                const styles = window.getComputedStyle(container);
+                console.log('Toast container styles:', {
+                    position: styles.position,
+                    top: styles.top,
+                    right: styles.right,
+                    zIndex: styles.zIndex,
+                    display: styles.display
+                });
+            }
+        });
+
+        // Monitor DOM changes to see if toasts are being added
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.addedNodes.length) {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.classList && node.classList.contains('toast')) {
+                            console.log('🍞 Toast added to DOM!', node);
+                            const styles = window.getComputedStyle(node);
+                            console.log('Toast styles:', {
+                                display: styles.display,
+                                opacity: styles.opacity,
+                                transform: styles.transform,
+                                width: styles.width,
+                                height: styles.height,
+                                backgroundColor: styles.backgroundColor
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
+        // Start observing after page loads
+        window.addEventListener('load', () => {
+            const container = document.querySelector('.toast-container');
+            if (container) {
+                observer.observe(container, { childList: true });
+                console.log('👀 Monitoring .toast-container for changes');
+            }
+        });
+    </script>
+
+{% endblock %}
+
+
+{# fails
+ <div data-signals="{country: ''}">
+  Country dropdown 
+  <label for="country">Country:</label>
+  <select name="country" id="country"
+          data-bind-country
+          data-on-change="@get('/api/cities')">
+    <option value="">Select country...</option>
+    <option value="usa">United States</option>
+    <option value="canada">Canada</option>
+  </select>
+
+   Cities dropdown (will be replaced)
+  <label for="city">City:</label>
+  <select name="city" id="city" disabled>
+    <option>Select country first</option>
+  </select>
+</div> #}
+{# <div data-signals="{country: ''}">
+  <label for="country">Country:</label>
+  <select name="country" 
+          id="country"
+          data-bind-country
+          data-on:change="$country = this.value; @get('/api/cities')">
+    <option value="">Select country...</option>
+    <option value="usa">United States</option>
+    <option value="canada">Canada</option>
+  </select>
+
+  <label for="city">City:</label>
+  <div id="cities-container">
+    <select name="city" disabled>
+      <option>Select country first</option>
+    </select>
+  </div>
+</div>
+ or ir Fails  try data-on:change="@get('/api/cities?country=' + $evt.target.value)">
+
+
+
+{# Or use signal binding (two-step) it fails #}
+{# <div data-signals="{country: ''}">
+  <label for="country">Country:</label>
+  <select name="country" 
+          id="country"
+          data-model="country"
+          data-on:change="@get('/api/cities?country=' + $country)">
+    <option value="">Select country...</option>
+    <option value="usa">United States</option>
+    <option value="canada">Canada</option>
+  </select>
+
+  <label for="city">City:</label>
+  <div id="cities-container">
+    <select name="city" disabled>
+      <option>Select country first</option>
+    </select>
+  </div>
+</div> 
+// fastify.post('/cities', async (request, reply) => {
+//   const { country } = req.query;
+//     const cities = getCitiesForCountry(country);
+    
+//     const options = cities.map(city => 
+//         `<option value="${city.code}">${city.name}</option>`
+//     ).join('');
+
+//     datastar.mergeFragments(res, `
+//         <select name="city" id="cities-container">
+//             <option value="">Choose city...</option>
+//             ${options}
+//         </select>
+//     `);
+// });
+// fastify.get('/cities', async (request, reply) => {
+//   const result = await request.readSignals();
+//   const country = result.signals?.country;
+  
+//   console.log('cities endpoint - country:', country);
+  
+//   if (!country) {
+//     await reply.datastar((sse) => {
+//       sse.patchElements(`
+//         <select name="city" disabled>
+//           <option>Select country first</option>
+//         </select>
+//       `, {
+//         selector: '#cities-container',
+//         mode: 'inner'
+//       });
+//     });
+//     return;
+//   }
+  
+//   const cities = getCitiesForCountry(country);
+  
+//   const options = cities.map(city => 
+//     `<option value="${city.code}">${city.name}</option>`
+//   ).join('');
+
+//   await reply.datastar((sse) => {
+//     sse.patchElements(`
+//       <select name="city">
+//         <option value="">Choose city...</option>
+//         ${options}
+//       </select>
+//     `, {
+//       selector: '#cities-container',
+//       mode: 'inner'
+//     });
+//   });
+// });
+// fastify.get('/cities', async (request, reply) => {
+//   console.log('=== /cities endpoint hit ===');
+//   console.log('query:', request.query);
+  
+//   const result = await request.readSignals();
+//   console.log('readSignals result:', JSON.stringify(result, null, 2));
+  
+//   const country = result.signals?.country;
+//   console.log('country value:', country);
+  
+//   if (!country) {
+//     console.log('No country - returning disabled select');
+//     await reply.datastar((sse) => {
+//       sse.patchElements(`
+//         <select name="city" disabled>
+//           <option>Select country first</option>
+//         </select>
+//       `, {
+//         selector: '#cities-container',
+//         mode: 'inner'
+//       });
+//     });
+//     return;
+//   }
+  
+//   const cities = getCitiesForCountry(country);
+//   console.log('cities found:', cities);
+  
+//   const options = cities.map(city => 
+//     `<option value="${city.code}">${city.name}</option>`
+//   ).join('');
+
+//   const html = `
+//     <select name="city">
+//       <option value="">Choose city...</option>
+//       ${options}
+//     </select>
+//   `;
+//   console.log('Sending HTML:', html);
+
+//   await reply.datastar((sse) => {
+//     sse.patchElements(html, {
+//       selector: '#cities-container',
+//       mode: 'inner'
+//     });
+//   });
+//  });
+ #}

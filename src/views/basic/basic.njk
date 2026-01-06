@@ -1,0 +1,200 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        .basic-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .basic-wrapper h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .counter {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 12px;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            background: #667eea;
+            color: white;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .task {
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .task:hover {
+            background: #e9ecef;
+            transform: translateX(4px);
+        }
+
+        .task.completed {
+            opacity: 0.6;
+        }
+
+        .task.completed span {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+
+        .task button {
+            background: #28a745;
+            font-size: 12px;
+        }
+
+        .task.completed button {
+            background: #ffc107;
+        }
+
+        input {
+            padding: 12px;
+            width: 70%;
+            margin-right: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .todo-app {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .todo-app h2 {
+            margin-top: 0;
+            color: #343a40;
+        }
+
+        #tasks-container {
+            margin-top: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            margin-bottom: 20px;
+        }
+    </style>
+
+    <div class="basic-wrapper">
+        <h1>✨ Datastar Nodejs/Fastify Basic Examples</h1>
+
+    <!-- Test basic signal binding -->
+    <div data-signals='{"message": ""}' class="counter">
+        <h3>Basic Signal Test</h3>
+        <input data-bind="message" placeholder="Type something..."/>
+        <p>Echo:
+            <strong><span data-text="$message || '(empty)'"></span></strong>
+        </p>
+        <div data-computed="uppercase = $message.toUpperCase()">
+            Uppercase:
+            <strong><span data-text="$uppercase"></span></strong>
+        </div>
+    </div>
+
+    <!-- Simple counter -->
+    <div data-signals='{"count": 0}' class="counter">
+        <h3>Counter</h3>
+        <div style="font-size: 24px; margin: 10px 0;">
+            <strong>Count:
+            </strong><span data-text="$count"></span>
+        </div>
+        <div>
+            <button data-on:click="$count = Number($count) + 1">➕ Increment</button>
+            <button data-on:click="$count = Number($count) - 1">➖ Decrement</button>
+            <button data-on:click="$count = 0" style="background: #dc3545;">🔄 Reset</button>
+        </div>
+    </div>
+
+    <!-- Simple HAL -->
+    <div data-signals='{"message": ""}' class="counter">
+        <h3>HAL</h3>
+        <p>note: 4 secs to send to #hal2 not hal1</p>
+        <div id="hal">
+            Waiting
+        </div>
+        <div id="hal2"></div>
+        <button data-on:click="@get('/api/hal')">➕ test hal
+        </button>
+    </div>
+
+    <!-- Simple Timer -->
+    <div data-signals='{"message": ""}' class="counter">
+        <h3>Timer</h3>
+        <div id="server-time">
+            Waiting
+        </div>
+        <button data-on:click="@get('/api/time-stream')">➕ test timer
+        </button>
+    </div>
+
+    <!-- Script Execution -->
+    <div data-signals='{"message": ""}' class="counter">
+        <h3>Script Execution</h3>
+        <section>
+            <button data-on:click="@get('/api/alert')">Show Alert</button>
+            <button data-on:click="@get('/api/console-log')">Console Log</button>
+        </section>
+    </div>
+
+    <!-- Todo list -->
+    <div data-signals='{"newtask": ""}' class="todo-app">
+        <h2>📝 My Tasks</h2>
+
+        <div class="input-group">
+            <input data-bind="newtask" placeholder="Enter a new task..." data-on:keydown.enter="$newtask.trim() && @post('/api/todos')">
+            <button data-on:click="$newtask.trim() && @post('/api/todos')">➕ Add Task</button>
+        </div>
+
+        <div id="tasks-container">
+            {{ initialTasksHtml | safe }}
+        </div>
+    </div>
+
+    </div>
+    <!-- End basic-wrapper -->
+
+{% endblock %}

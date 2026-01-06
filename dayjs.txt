@@ -1,0 +1,84 @@
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+  PDF is being generated
+  
+
+    
+=======
+>>>>>>> 7123dcdf6917e803efa21e36ba65f681398bb757
+  const createdAt = dayjs().utc(true).format('MM/DD/YYYY');
+   
+same
+let isadate = property.toLowerCase().includes("date");
+        console.log("sroi isadate", isadate, property);
+        let ss = "";
+        let val = ordered[property];
+        if (val === undefined) val = "";
+      
+
+   form
+        
+      
+        if (isadate) {
+          // val = dayjs(val).format('MM/DD/YYYY')
+          val = dayjs.utc(val.toLocaleString()).format("MM/DD/YYYY");
+          if (val === "Invalid date") val = "";
+        }
+
+
+    change
+      if (isadate) {
+          // Extract just the date part to avoid timezone issues
+          // If date is already in YYYY-MM-DD format, parse it directly
+          // If it's an ISO string with time, split at 'T' to get date part only
+          let dateStr = val;
+          if (typeof val === 'string' && val.includes('T')) {
+            dateStr = val.split('T')[0]; // Get YYYY-MM-DD part only
+          }
+          val = dayjs(dateStr).format("MM/DD/YYYY");
+
+          if (val === "Invalid date") val = "";
+        }
+
+
+         Line by line:
+
+  1. let val = ordered[property]; - Gets the value from the form data
+  2. if (val === undefined) val = ""; - If the field is empty/undefined, set it to empty string
+  3. if (isadate) - If the property name contains "date"
+  4. val = dayjs.utc(val.toLocaleString()).format("MM/DD/YYYY"); - This is the problematic part:
+    - val.toLocaleString() - Converts date to server's local timezone string
+        - Input: "2025-12-07T05:00:00.000Z" (UTC midnight in EST)
+      - Output: "12/6/2025, 12:00:00 AM" (converted to EST, now shows Dec 6!)
+    - dayjs.utc(...) - Parses that local time string as if it were UTC
+        - Takes "12/6/2025, 12:00:00 AM" and treats it as UTC
+    - .format("MM/DD/YYYY") - Formats to "12/06/2025"
+
+  Result: Date shifts by 1 day!
+  5. if (val === "Invalid date") val = ""; - If parsing failed, set to empty string
+
+  ---
+  Example of the problem:
+  - User selects: December 7, 2025
+  - Browser sends: "2025-12-07T05:00:00.000Z" (midnight Dec 7 in EST = 5am UTC)
+  - .toLocaleString() converts to EST: "12/6/2025, 12:00:00 AM"
+  - dayjs.utc() treats that as UTC, causing further shift
+  - Final output: "12/06/2025" ❌ (wrong - off by 1 day!)
+
+  This is why your new code that strips the time portion is much better - it avoids all timezone conversions.
+
+
+   // Option 1: Use server's local timezone (what you have now)
+  const createdAt = dayjs().format("MM/DD/YYYY");
+
+  // Option 2: Explicitly use UTC time (if server is set to UTC)
+  const createdAt = dayjs.utc().format("MM/DD/YYYY");
+
+  // Option 3: Use specific timezone (requires dayjs timezone plugin)
+<<<<<<< HEAD
+  const createdAt = dayjs().tz('America/New_York').format("MM/DD/YYYY");
+=======
+  const createdAt = dayjs().tz('America/New_York').format("MM/DD/YYYY");
+>>>>>>> test
+>>>>>>> 7123dcdf6917e803efa21e36ba65f681398bb757

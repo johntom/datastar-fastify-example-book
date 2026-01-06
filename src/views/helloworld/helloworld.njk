@@ -1,0 +1,156 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+
+    <style>
+        .helloworld-wrapper {
+            background-color: #000000; /* Pure black background */
+            color: white;
+            min-height: calc(100vh - 200px); /* Full height minus header/footer */
+            padding: 4rem 1rem;
+        }
+
+        .helloworld-content {
+            font-size: 1.125rem; /* text-lg */
+            max-width: 36rem; /* max-w-xl */
+            margin: 0 auto;
+        }
+
+        .demo-card {
+            background-color: rgb(31, 41, 55); /* gray-800 */
+            color: rgb(156, 163, 175); /* gray-400 */
+            border-radius: 0.5rem;
+            padding: 2rem 1.5rem; /* px-6 py-8 */
+            box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.05), 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .demo-card > * + * {
+            margin-top: 0.5rem; /* space-y-2 */
+        }
+
+        .demo-card > p {
+            margin-top: 0.5rem; /* mt-2 from original */
+        }
+
+        .demo-title {
+            color: white;
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: 600; /* font-semibold */
+        }
+
+        .demo-input {
+            width: 9rem; /* w-36 */
+            border-radius: 0.375rem;
+            border: 1px solid rgb(209, 213, 219); /* border-gray-300 */
+            padding: 0.5rem 0.75rem; /* px-3 py-2 */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            background-color: white;
+            color: rgb(17, 24, 39);
+        }
+
+        .demo-input::placeholder {
+            color: rgb(156, 163, 175); /* placeholder-gray-400 */
+        }
+
+        .demo-input:focus {
+            border-color: rgb(14, 165, 233); /* focus:border-sky-500 */
+            outline: 1px solid rgb(14, 165, 233); /* focus:outline-sky-500 */
+        }
+
+        .demo-input:disabled {
+            border-color: rgb(55, 65, 81); /* dark:disabled:border-gray-700 */
+            background-color: rgba(31, 41, 55, 0.2); /* dark:disabled:bg-gray-800/20 */
+        }
+
+        .demo-button {
+            border-radius: 0.375rem;
+            background-color: rgb(14, 165, 233); /* sky-500 */
+            padding: 0.625rem 1.25rem;
+            font-weight: 600;
+            line-height: 1.25rem;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+
+        .demo-button:hover {
+            background-color: rgb(3, 105, 161); /* sky-700 */
+            color: rgb(243, 244, 246); /* gray-100 */
+        }
+
+        .message-display {
+            margin: 4rem 0;
+            font-size: 6rem;
+            font-weight: bold;
+            background: linear-gradient(to right in oklch, red, orange, yellow, green, blue, blue, violet);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-align: left;
+            line-height: 1;
+        }
+
+        @media (max-width: 640px) {
+            .message-display {
+                font-size: 3rem;
+            }
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem; /* space-x-2 */
+        }
+
+        .input-group label {
+            color: rgb(156, 163, 175); /* gray-400 */
+        }
+    </style>
+
+    <div class="helloworld-wrapper">
+        <div class="helloworld-content" data-signals:delay="400">
+            <div class="demo-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h1 class="demo-title">
+                        Datastar SDK Demo
+                    </h1>
+                    <img src="../public/images/rocket-64x64.png" alt="Rocket" width="64" height="64"/>
+                </div>
+                <p>
+                    SSE events will be streamed from the backend to the frontend.
+                </p>
+                <div class="input-group">
+                    <label for="delay">
+                        Delay in milliseconds
+                    </label>
+                    <input
+                        data-bind:delay
+                        id="delay"
+                        type="number"
+                        step="100"
+                        min="0"
+                        class="demo-input"
+                    />
+                </div>
+                <button
+                    data-on:click="@get('/api/hello-world')"
+                    class="demo-button">
+                    Start
+                </button>
+            </div>
+            <div class="message-display">
+                <div id="message">Hello, world!</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Debug: Check if Datastar is loaded
+        window.addEventListener('load', () => {
+            const hasDatastarAttrs = document.querySelector('[data-on\\:click]') !== null;
+            console.log('Datastar elements found:', hasDatastarAttrs);
+            console.log('Page fully loaded - Datastar should be active');
+        });
+    </script>
+
+{% endblock %}

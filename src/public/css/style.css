@@ -1,0 +1,227 @@
+/* Base styles */
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2c3e50;
+  --success-color: #27ae60;
+  --error-color: #e74c3c;
+  --background-color:black
+   /* #f5f7fa; */
+    --text-color: #333;
+  --text-color: #333;
+  --border-radius: 4px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: var(--text-color);
+  background-color: #e0e0e0;
+  padding: 20px;
+}
+
+/* Typography */
+h1 {
+  color: var(--secondary-color);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Layout */
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+header, footer {
+  text-align: center;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+footer {
+  margin-top: 2rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+nav ul {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+}
+
+/* Card component */
+.card {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+/* Form styles */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+input, textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.button {
+  display: inline-block;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+.button:hover {
+  background-color: #2980b9;
+  text-decoration: none;
+}
+
+/* Validation and message styles */
+.error-message {
+  color: var(--error-color);
+  background-color: rgba(231, 76, 60, 0.1);
+  padding: 0.75rem;
+  border-radius: var(--border-radius);
+  margin-bottom: 1rem;
+  border-left: 3px solid var(--error-color);
+}
+
+.validation-message {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  min-height: 1.25rem;
+  padding: 0.25rem 0;
+  transition: all 0.3s ease;
+}
+
+.validation-message.valid {
+  color: var(--success-color);
+  padding-left: 0.5rem;
+  border-left: 2px solid var(--success-color);
+}
+
+.validation-message.invalid {
+  color: var(--error-color);
+  padding-left: 0.5rem;
+  border-left: 2px solid var(--error-color);
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes shake {
+  10%, 90% {
+    transform: translateX(-1px);
+  }
+  20%, 80% {
+    transform: translateX(2px);
+  }
+  30%, 50%, 70% {
+    transform: translateX(-2px);
+  }
+  40%, 60% {
+    transform: translateX(1px);
+  }
+}
+
+/* Main container styles */
+.main-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: #f8f8f8;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.section-header {
+  background-color: rgb(216, 185, 245);
+  padding: 8px 12px;
+  margin: 20px 0 15px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.form-control,
+.form-select {
+  height: 38px;
+  font-size: 0.9rem;
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 80px;
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+
+.section-divider {
+  border-top: 2px solid #007bff;
+  margin: 25px 0;
+}
+
+.btn-group-custom {
+  margin-bottom: 15px;
+}
+
+.btn-group-custom .btn {
+  margin-right: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  .container {
+    padding: 0.5rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+}

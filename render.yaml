@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: datastar-fastify-crud-demo
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run serve
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: host
+        value: 0.0.0.0
+      - key: port
+        value: 10000
+      - key: MONGODB_URLtodo
+        sync: false
+      - key: SQLITE_DB_PATH
+        value: ./data/database.sqlite

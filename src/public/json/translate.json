@@ -1,0 +1,329 @@
+[
+  {
+    "label": "Nombre",
+    "fieldId": "a1_Employer_Name"
+  },
+  {
+    "label": "Dirección",
+    "fieldId": "a2_Employer_Address"
+  },
+  {
+    "label": "Ciudad",
+    "fieldId": "a3_Employer_City"
+  },
+  {
+    "label": "Estado",
+    "fieldId": "a4_Employer_State"
+  },
+  {
+    "label": "Código Postal",
+    "fieldId": "a5_Employer_Zip"
+  }
+,
+  {
+    "label": "Apellido",
+    "fieldId": "b100_Employee_Last_Name"
+  },
+  {
+    "label": "Nombre",
+    "fieldId": "b101_Employee_First_Name"
+  },
+  {
+    "label": "Inicial del Segundo Nombre",
+    "fieldId": "b104_Employee_MI"
+  },
+  {
+    "label": "Dirección",
+    "fieldId": "b104_Employee_Street_Address"
+  },
+  {
+    "label": "Ciudad",
+    "fieldId": "b105_Employee_City"
+  },
+  {
+    "label": "Estado",
+    "fieldId": "b106_Employee_State"
+  },
+  {
+    "label": "Código Postal",
+    "fieldId": "b107_Employee_Zip"
+  },
+  {
+    "label": "Teléfono",
+    "fieldId": "b108_Employee_Telephone"
+  },
+  {
+    "label": "Fecha de Nacimiento",
+    "fieldId": "b109_Employee_Date_of_Birth"
+  },
+  {
+    "label": "Número de Seguro Social",
+    "fieldId": "b110_Employee_SSN"
+  },
+  {
+    "label": "Fecha de Contratación",
+    "fieldId": "b111_Employee_Date_of_Hire"
+  },
+  {
+    "label": "Estado de Contratación",
+    "fieldId": "b120_Employee_State_of_Hire"
+  },
+  {
+    "label": "Género",
+    "fieldId": "b130_Employee_Sex_male"
+  },
+  {
+    "label": "Género",
+    "fieldId": "b130_Employee_Sex_female"
+  },
+  {
+    "label": "Departamento",
+    "fieldId": "b140_Employee_Department"
+  },
+  {
+    "label": "Ocupación",
+    "fieldId": "b150_Employee_Occupation"
+  },
+  {
+    "label": "Código de Clase NCCI",
+    "fieldId": "xx"
+  },
+  {
+    "label": "Estado Civil",
+    "fieldId": "b170_Employee_Marital_Status"
+  },
+  {
+    "label": "Estatus de Trabajo",
+    "fieldId": "b180_fulltime"
+  },
+  {
+    "label": "Estatus de Trabajo",
+    "fieldId": "b180_parttime"
+  },
+  {
+    "label": "Tasa de Salario",
+    "fieldId": "b190_Employee_Wage_Rate"
+  },
+  {
+    "label": "Programa de Pagos",
+    "fieldId": "b191_Employee_Pay_Schedule"
+  },
+  {
+    "label": "Días Trabajados por Semana",
+    "fieldId": "b192_Employee_Days_worked_per_week"
+  },
+  {
+    "label": "Pago Completo por Fecha de Lesión",
+    "fieldId": "b193_Yes"
+  },
+  {
+    "label": "Pago Completo por Fecha de Lesión",
+    "fieldId": "b193_No"
+  },
+  {
+    "label": "Continuación de Salario del Empleado",
+    "fieldId": "b194_Yes"
+  },
+  {
+    "label": "Continuación de Salario del Empleado",
+    "fieldId": "b194_No"
+  },
+  {
+    "label": "Correo Electrónico",
+    "fieldId": "b195_Employee_email"
+  },
+
+  {
+    "label": "Tratamiento Inicial",
+    "fieldId": "d101_"
+  },
+  {
+    "label": "Nombre del Médico o Proveedor de Atención Médica",
+    "fieldId": "d102_medical_health_provider"
+  },
+  {
+    "label": "Dirección",
+    "fieldId": "d103_medical_address"
+  },
+  {
+    "label": "Ciudad",
+    "fieldId": "d104_medical_city"
+  },
+  {
+    "label": "Estado",
+    "fieldId": "d105_medical_State"
+  },
+  {
+    "label": "Código Postal",
+    "fieldId": "d106_medical_zip"
+  },
+  {
+    "label": "Hospital o Instalación Externa",
+    "fieldId": "d107_medical_hospital_or_offsite_facility"
+  },
+  {
+    "label": "Dirección de la Instalación",
+    "fieldId": "d108_medical_facility_address"
+  },
+  {
+    "label": "Ciudad de la Instalación",
+    "fieldId": "d1089_medical_facility_city"
+  },
+  {
+    "label": "Estado de la Instalación",
+    "fieldId": "d110_medical_facility_State"
+  },
+  {
+    "label": "Código Postal de la Instalación",
+    "fieldId": "d111_medical_facility_zip"
+  },
+{
+    "label": "Hora que Comenzó a Trabajar el Empleado",
+    "fieldId": "c101_occurrence_time_employee_began_work"
+  },
+  {
+    "label": "AM/PM",
+    "fieldId": "c102_am"
+  },
+  {
+    "label": "AM/PM",
+    "fieldId": "c102_pm"
+  },
+  {
+    "label": "Fecha de la Lesión",
+    "fieldId": "c103_occurrence_date_of_injury"
+  },
+  {
+    "label": "Hora de la Lesión",
+    "fieldId": "c104_occurrence_time_of"
+  },
+  {
+    "label": "AM/PM",
+    "fieldId": "c105_am"
+  },
+  {
+    "label": "AM/PM",
+    "fieldId": "c105_pm"
+  },
+  {
+    "label": "¿Se perdió tiempo de trabajo?",
+    "fieldId": "c106_yes"
+  },
+  {
+    "label": "¿Se perdió tiempo de trabajo?",
+    "fieldId": "c106_no"
+  },
+  {
+    "label": "Último Día de Trabajo",
+    "fieldId": "c107_occurrence_last_work_date"
+  },
+  {
+    "label": "Fecha que se Notificó al Empleador",
+    "fieldId": "c108_occurrence_date_employer_notified"
+  },
+  {
+    "label": "Fecha que Comenzó la Discapacidad",
+    "fieldId": "c109_occurrence_date_disability_began"
+  },
+  {
+    "label": "Tipo de Lesión",
+    "fieldId": "c110_occurrence_type_of_injury"
+  },
+  {
+    "label": "Parte(s) del Cuerpo Afectada(s)",
+    "fieldId": "c111_occurrence_parts_affected"
+  },
+  {
+    "label": "¿Ocurrió la lesión en las instalaciones del empleador?",
+    "fieldId": "c112_yes"
+  },
+  {
+    "label": "¿Ocurrió la lesión en las instalaciones del empleador?",
+    "fieldId": "c112_no"
+  },
+  {
+    "label": "Departamento o ubicación donde ocurrió el accidente",
+    "fieldId": "c113_occurrence_Department_or_location_where_accident_or_exposure_occurred"
+  },
+  {
+    "label": "Código postal del sitio de la lesión",
+    "fieldId": "c114_occurrence_Zip_code_of_injury_site"
+  },
+  {
+    "label": "Todo el equipo, materiales o químicos que el empleado estaba usando cuando ocurrió el accidente",
+    "fieldId": "c115_occurrence_All_equipment_materials_or_chemicals_employee_was_using_when_accident_or_illness_exposure_occurred"
+  },
+  {
+    "label": "Actividad específica en la que estaba involucrado el empleado cuando ocurrió el accidente",
+    "fieldId": "c116_occurrence_specific_activity_employee"
+  },
+  {
+    "label": "Proceso de trabajo en el que estaba involucrado el empleado cuando ocurrió el accidente",
+    "fieldId": "c117_occurrence_Work_process_the_employee_was_engaged_in_when_accident_or_illness_exposure_occurred"
+  },
+  {
+    "label": "Cómo ocurrió la lesión - Describa la secuencia de eventos",
+    "fieldId": "c118_occurrence_How_injury_or_illness_abnormal_health_condition_occurred_Describe_the_sequence_of_events"
+  },
+  {
+    "label": "Fecha de Regreso al Trabajo",
+    "fieldId": "c119_occurence_date_returned_to_work"
+  },
+  {
+    "label": "¿El empleado aún está fuera del trabajo?",
+    "fieldId": "c120_Yes"
+  },
+  {
+    "label": "¿El empleado aún está fuera del trabajo?",
+    "fieldId": "c120_No"
+  },
+  {
+    "label": "Si es Fatal - Fecha de Muerte",
+    "fieldId": "c121_occurrence_if_fatal_date_of_death"
+  },
+  {
+    "label": "¿Se proporcionó equipo de seguridad?",
+    "fieldId": "c122_occurrence_safety_equip_provided"
+  },
+  {
+    "label": "¿Se usó el equipo de seguridad?",
+    "fieldId": "c123_occurrence_safety_equip_used"
+  },
+{
+    "label": "Nombre del Testigo",
+    "fieldId": "e101_other_witness_name"
+  },
+  {
+    "label": "Teléfono del Testigo",
+    "fieldId": "e102_other_witness_phone"
+  },
+  {
+    "label": "Fecha que se Notificó al Administrador/TPA",
+    "fieldId": "e103_other_date_administrator_tpa_notified"
+  },
+  {
+    "label": "Fecha de Preparación del Reporte",
+    "fieldId": "e104_other_date_report_prepared"
+  },
+  {
+    "label": "Nombre del Preparador",
+    "fieldId": "e105_other_preparers_name"
+  },
+  {
+    "label": "Título del Preparador",
+    "fieldId": "e106_other_preparers_title"
+  },
+  {
+    "label": "Correo Electrónico del Preparador",
+    "fieldId": "e107_other_preparers_Email_address"
+  },
+  {
+    "label": "Teléfono del Preparador",
+    "fieldId": "e108_other_preparers_phone"
+  },
+  {
+    "label": "Admin Password option 1",
+    "fieldId": "pass"
+  }
+
+]

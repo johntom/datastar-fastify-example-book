@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+    <link rel="stylesheet" href="/public/styles/styles.css">
+    <script src='https://unpkg.com/htmx.org@1.4.1'></script>
+    <script src='https://unpkg.com/htmx.org@1.4.1/dist/ext/client-side-templates.js'></script>
+  <!-- Load from unpkg -->
+
+<script src="https://unpkg.com/hyperscript.org@0.0.4"></script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> {{title}}</title>
+</head>
+
+<body>
+    {% block content %}
+    <div id="jrt-content">
+    <h1>{{address.title}}</h1>
+  
+        {{address.city}}<br>
+        {{address.twitterName}}<br>
+        {{address.twitterUrl}}<br>
+        {{address.blogName}} / {{address.blogUrl}}<br>
+    </div>
+
+    
+        <img src="/public/images/gato.jpeg" 
+        style='margin-left: 40px;max-width:600px;' />
+
+    {% endblock %}
+
+
+
+    <div hx-ext="client-side-templates">
+        <button hx-get="https://jsonplaceholder.typicode.com/todos/1" 
+                hx-swap="innerHTML"
+                hx-target="#content"
+                nunjucks-template="foo">
+                <h1> Click Me</h1>
+        </button>
+    
+        <h1 id="content">Start</h1>
+        
+        <template id="foo">
+            <h1>   <p>
+            {% if id == 1 %}
+            id is 1
+            {% else %}
+            id is NOT 1 
+            {% endif %}
+          </p>
+          <p>id: {{id}}</p>
+          <p>title: {{title}}</p>
+        </template>
+      </div> 
+      <input type="text" id="txtTodo"/>
+      <button type="button" _="on click put #txtTodo.value into #todolist.innerHTML then set #txtTodo.value to ''">Add</button>
+      <ul id="todolist">
+      </ul>
+
+</body>
+<!-- <script src='https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp'></script> -->
+ 
+</html>
+

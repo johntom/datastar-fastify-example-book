@@ -1,0 +1,304 @@
+// toast.js - Fastify + Datastar Toast Demo using SDK
+// move to api eventually
+const fastify = require("fastify")({
+  logger: {
+    level: "info",
+    transport: {
+      target: "pino-pretty",
+    },
+  },
+});
+
+const { datastar, GetSSE } = require("@johntom/datastar-fastify-sdk");
+const path = require("path");
+
+// Helper function for delays
+const sleep = async (time) => {
+  return new Promise((resolve) => setTimeout(resolve, time));
+};
+
+// Register static files plugin
+fastify.register(require('@fastify/static'), {
+  root: path.join(__dirname, 'public'),
+  prefix: '/'
+});
+
+// Register the Datastar plugin
+fastify.register(datastar);
+
+const port = 3003;
+
+// Messages from CodePen example 
+const messages = [ 
+  "Stop overcomplicating it.",
+  "Backend controls state.",
+  "Props down, Events up.",
+  "Flamegraphs don't care about your feelings.",
+  "Practice yourself, for heaven's sake, in little things; and thence proceed to greater",
+  "Freedom is the only worthy goal in life. It is won by disregarding things that lie beyond our control.",
+  "Be the change you want to see.",
+  "https://data-star.dev/ 🚀",
+];
+
+// Helper to get random message
+const getRandomMessage = () => messages[Math.floor(Math.random() * messages.length)];
+
+// Message cycling state
+let currentMessageIndex = 0;
+// Serve the index page
+fastify.get("/", async (request, reply) => {
+  return reply.type("text/html").send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Datastar Toast Demo</title>
+  <link rel="stylesheet" href="/styles/toastStandalone.css">
+  <script
+    type="module"
+    defer
+    src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.7/bundles/datastar.js"
+  ></script>
+</head>
+<body>
+
+<div>
+  <h1>Datastar Toast Notifications & Messages</h1>
+  <div data-signals:count2="2">
+  <h2>With 0ms delay</h2>
+  <p>The click handler is evaluated with the correct radio button value, i.e. after the bind has updated the signal.</p>
+  <label>
+    <input
+    type="radio"
+    value="1"
+    data-bind:count2
+    data-on:click__delay.0ms="console.log({ expect: 1, actual: $count2 })">
+    1
+  </label>
+    <label>
+    <input
+    type="radio"
+    value="2"
+    data-bind:count2
+    data-on:click__delay.0ms="console.log({ expect: 2, actual: $count2 })">
+    2
+  </label>
+    <label>
+    <input
+    type="radio"
+    value="3"
+    data-bind:count2
+    data-on:click__delay.0ms="console.log({ expect: 3, actual: $count2 })">
+    3
+  </label>
+</div>
+  <p>
+    Based on <a href="https://jsfiddle.net/jd1zk5t6/">jsfiddle</a> and  <a href="https://codepen.io/starfederation/pen/wBKPMPx" target="_blank">CodePen</a><br>
+    Signal-free CSS + Datastar toasts with in/out animations, progress bar, and pause-on-hover.
+  </p>
+
+  <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+    <button
+      data-on:click="
+        const container = document.querySelector('.toast-container');
+        const t = document.querySelector('#toast-template');
+        const n = t.content.firstElementChild.cloneNode(true);
+        const msg = window.messages[Math.floor(Math.random() * window.messages.length)];
+        n.querySelector('.toast-body').textContent = 'Toast! ' + msg;
+        container.appendChild(n);
+      "
+      style="padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; color: blue;"
+    >
+      Show Client Toast
+    </button>
+
+    <button
+      data-on:click="@get('/toast/show')"
+      style="padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; color: blue;"
+    >
+      Show Server Toast (SDK)
+    </button>
+
+    <button
+      data-on:click="@get('/toast/success')"
+      style="padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; background-color: #4CAF50; color: white; border: none;"
+    >
+      Success Toast
+    </button>
+
+    <button
+      data-on:click="@get('/toast/error')"
+      style="padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; background-color: #f44336; color: white; border: none;"
+    >
+      Error Toast
+    </button>
+  </div>
+
+  <!-- CodePen style message cycling section -->
+  <div style="margin-top: 3rem; padding: 2rem; border: 2px solid #ccc; border-radius: 8px;">
+    <h2>Message Cycling (CodePen Demo)</h2>
+    <main>
+      <div id="content" style="font-size: 1.5rem; min-height: 3rem; margin: 1rem 0; padding: 1rem; background-color: black; color: white; border-radius: 4px;">
+        Hello there!
+      </div>
+    </main>
+    <button
+      data-on:click="@get('/messages/cycle')"
+      style="padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; background-color: #2196F3; color: black; border: none; border-radius: 4px;"
+    >
+      Cycle Messages
+    </button>
+  </div>
+</div>
+
+<div class="toast-container"></div>
+
+<template id="toast-template">
+  <div
+    class="toast toast-entering"
+    style="--toast-duration: 5000ms"
+    data-on:animationend="event.animationName?.startsWith('toast-in') && el.classList.remove('toast-entering');event.animationName?.startsWith('toast-out') && el.remove()"
+  >
+    <div class="toast-body" style="color: blue;"></div>
+    <div
+      class="toast-progress"
+      data-on:animationend="el.closest('.toast')?.classList.add('toast-leaving')"
+    ></div>
+  </div>
+</template>
+
+<script>
+  // Messages from CodePen example - available to Datastar
+  window.messages = [
+    "1 Stop overcomplicating it.",
+    "2 Backend controls state.",
+    "3 Props down, Events up.",
+    "4 Flamegraphs don't care about your feelings.",
+    "5 Practice yourself, for heaven's sake, in little things; and thence proceed to greater",
+    "6 Freedom is the only worthy goal in life. It is won by disregarding things that lie beyond our control.",
+    "7 Be the change you want to see.",
+    "https://data-star.dev/ 🚀",
+  ];
+</script>
+
+<!--<script>document.getElementsByTagName("h1")[0].style.fontSize = "3vw";</script>-->
+
+ 
+</body>
+</html>
+  `);
+});
+
+// Toast endpoint - generic toast
+fastify.get("/toast/show", async (request, reply) => {
+  const message = getRandomMessage();
+  const toastHtml = `
+    <div
+      class="toast toast-entering"
+      style="--toast-duration: 5000ms"
+      data-on:animationend="event.animationName?.startsWith('toast-in') && el.classList.remove('toast-entering');event.animationName?.startsWith('toast-out') && el.remove()"
+    >
+      <div class="toast-body" style="color: blue;">Toast! ${message}</div>
+      <div
+        class="toast-progress"
+        data-on:animationend="el.closest('.toast')?.classList.add('toast-leaving')"
+      ></div>
+    </div>
+  `;
+
+  await reply.datastar(async (sse) => {
+    sse.patchElements(toastHtml, {
+      selector: ".toast-container",
+      mode: "append"
+    });
+  });
+});+
+
+// Success toast endpoint
+fastify.get("/toast/success", async (request, reply) => {
+  alert ("toast.jsx /toast/success")
+  const timestamp = new Date().toLocaleTimeString();
+  const toastHtml = `
+    <div
+      class="toast toast-entering"
+      style="--toast-duration: 5000ms; background-color: #d4edda; border-color: #28a745;"
+      data-on:animationend="event.animationName?.startsWith('toast-in') && el.classList.remove('toast-entering');event.animationName?.startsWith('toast-out') && el.remove()"
+    >
+      <div class="toast-body" style="color: #155724;">✓ Success! Operation completed at ${timestamp}</div>
+      <div
+        class="toast-progress"
+        style="background-color: #28a745;"
+        data-on:animationend="el.closest('.toast')?.classList.add('toast-leaving')"
+      ></div>
+    </div>
+  `;
+
+  await reply.datastar(async (sse) => {
+    sse.patchElements(toastHtml, {
+      selector: ".toast-container",
+      mode: "append"
+    });
+  });
+});
+
+// Error toast endpoint
+fastify.get("/toast/error", async (request, reply) => {
+  const timestamp = new Date().toLocaleTimeString();
+  const toastHtml = `
+    <div
+      class="toast toast-entering"
+      style="--toast-duration: 5000ms; background-color: #f8d7da; border-color: #f44336;"
+      data-on:animationend="event.animationName?.startsWith('toast-in') && el.classList.remove('toast-entering');event.animationName?.startsWith('toast-out') && el.remove()"
+    >
+      <div class="toast-body" style="color: #721c24;">✗ Error! Something went wrong at ${timestamp}</div>
+      <div
+        class="toast-progress"
+        style="background-color: #f44336;"
+        data-on:animationend="el.closest('.toast')?.classList.add('toast-leaving')"
+      ></div>
+    </div>
+  `;
+
+  await reply.datastar(async (sse) => {
+    sse.patchElements(toastHtml, {
+      selector: ".toast-container",
+      mode: "append"
+    });
+  });
+});
+
+// Message cycling endpoint - cycles through ALL messages with one click
+fastify.get("/messages/cycle", async (request, reply) => {
+  await reply.datastar(async (sse) => {
+    // Cycle through ALL messages
+    for (let i = 0; i < messages.length; i++) {
+      const message = messages[i];
+
+      // Update the content with current message
+      sse.patchElements(message, {
+        selector: "#content",
+        mode: "inner"
+      });
+
+      // Wait 2 seconds before showing next message (except for the last one)
+      if (i < messages.length - 1) {
+        await sleep(2000);
+      }
+    }
+  });
+});
+
+// Start the server
+const start = async () => {
+  try {
+    await fastify.listen({ port: port, host: "127.0.0.1" });
+    console.log(`\n✨ Server running at http://localhost:${port}`);
+    console.log(`   Open your browser and click 'Start' to see the demo!\n`);
+  } catch (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
+};
+
+start();

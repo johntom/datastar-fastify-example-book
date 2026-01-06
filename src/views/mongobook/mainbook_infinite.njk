@@ -1,0 +1,553 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+<div class="container mt-4"
+    data-signals:editingId="''"
+    data-signals:editModalTitle="''"
+    data-signals:editModalAuthor="''"
+    data-signals:editModalId="''"
+    data-signals:editModalBookId="''"
+    data-signals:page="1"
+    data-signals:hasMore="{{ hasMoreBooks | default(true) }}"
+    data-signals:loading="false">
+    <style>
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        td, th {
+            border: 1px solid #383737;
+            text-align: left;
+            padding: 8px;
+        }
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+        .error {
+            color: red;
+        }
+        .error-message {
+            color: red;
+            font-size: 0.9em;
+        }
+        .valid {
+            color: green;
+        }
+        .editing {
+            background-color: #fffacd !important;
+        }
+        .loading-spinner {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .scroll-trigger {
+            height: 1px;
+            margin-bottom: 20px;
+        }
+    </style>
+
+    <h1>{{ title }}</h1>
+    <p>{{ hello }}</p>
+
+    <div id='div1'>
+        <button type="button" class="btn btn-secondary mb-3" onclick="window.location.reload()">
+            Reload Page
+        </button>
+    </div>
+
+    <h3>Book Management with Datastar</h3>
+
+    <!-- Debug Info -->
+    <div class="alert alert-info mb-3">
+        <small>
+            <strong>Debug1:</strong> editingId = <span data-text="$editingId || 'none'"></span> |
+            Page: <span data-text="$page"></span> |
+            HasMore: <span data-text="$hasMore"></span> |
+            Loading: <span data-text="$loading"></span> |
+            Total Books: {{ totalBooks | default(0) }}<br>
+            <button class="btn btn-sm btn-info mt-2" data-on:click="@get('/api_view/test-sse')">Test SSE</button>
+            <button class="btn btn-sm btn-warning ms-2" data-on:click="console.log('Datastar click works'); alert('Click event working')">Test Click</button>
+            {% if books and books.length > 0 %}
+            <button class="btn btn-sm btn-success ms-2" data-on:click="console.log('Testing edit for first book:', '{{ books[0]._id }}'); console.log('Selector will be:', '#book-{{ books[0]._id }}'); console.log('Element exists:', document.querySelector('#book-{{ books[0]._id }}')); @get('/api_view/get-edit-form/{{ books[0]._id }}')">Test Edit (First Book)</button>
+            <button class="btn btn-sm btn-danger ms-2" data-on:click="const el = document.querySelector('#book-{{ books[0]._id }}'); console.log('Direct DOM test - Element:', el); if(el) { el.style.backgroundColor = 'yellow'; el.innerHTML = '<td colspan=5>DIRECT DOM WORKS!</td>'; }">Test Direct DOM</button>
+            {% endif %}
+        </small>
+    </div>
+
+    <!-- Add Book Button (Opens Modal) -->
+    <div class="mb-4">
+        <button
+            type="button"
+            class="btn btn-success btn-lg"
+            data-bs-toggle="modal"
+            data-bs-target="#addBookModal"
+            data-on:click="console.log('Opening Add Book modal')">
+            <i class="fas fa-plus-circle"></i> Add New Book
+        </button>
+    </div>
+
+    <!-- Books Table -->
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th colspan="5">
+                        <input
+                            class="form-control"
+                            placeholder="Filter books..."
+                            data-on:input="
+                                const filter = el.value.toLowerCase();
+                                document.querySelectorAll('#book-list tr').forEach(row => {
+                                    const text = row.textContent.toLowerCase();
+                                    row.style.display = text.includes(filter) ? '' : 'none';
+                                });
+                            "
+                        />
+                        <small class="text-muted">Filter books by typing</small>
+                    </th>
+                </tr>
+                <tr>
+                    <th>_id</th>
+                    <th>Book ID</th>
+                    <th>Book Title</th>
+                    <th>Book Author</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="book-list">
+                {% for book in books %}
+                <tr id="book-{{ book._id }}" data-book-id="{{ book._id }}">
+                    <td>{{ book._id }}</td>
+                    <td>{{ book.id }}</td>
+                    <td>{{ book.name }}</td>
+                    <td>{{ book.author }}</td>
+                    <td>
+                        <button
+                            class="btn btn-primary btn-sm"
+                            data-on:click="
+                                console.log('Edit clicked for book:', '{{ book._id }}');
+                                console.log('Current editingId:', $editingId);
+                                $editingId = '{{ book._id }}';
+                                console.log('Set editingId to:', $editingId);
+                                console.log('Calling API...');
+                                @get('/api_view/get-edit-form/{{ book._id }}');
+                            ">
+                            Edit
+                        </button>
+                        <button
+                            class="btn btn-info btn-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editBookModal"
+                            data-on:click="
+                                console.log('Edit Popup clicked for book:', '{{ book._id }}');
+                                @get('/api_view/load-edit-modal/{{ book._id }}');
+                            ">
+                            Edit Popup
+                        </button>
+                        <button
+                            class="btn btn-danger btn-sm"
+                            data-on:click="
+                                console.log('Delete clicked for book:', '{{ book._id }}');
+                                if(confirm('Are you sure you wish to delete this book?')){
+                                    console.log('Delete confirmed');
+                                    @delete('/api_view/delete/{{ book._id }}');
+                                }
+                            ">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Infinite Scroll Trigger -->
+    <div
+        class="scroll-trigger"
+        data-intersects="
+            console.log('Scroll trigger intersected - hasMore:', $hasMore, 'loading:', $loading, 'page:', $page);
+            if($hasMore && !$loading) {
+                console.log('Loading more books...');
+                $loading = true;
+                @get('/api_view/load-more-books?page=' + $page);
+            }
+        ">
+    </div>
+
+    <!-- Manual Load More Button -->
+    <div class="text-center my-3" data-show="$hasMore && !$loading">
+        <button
+            class="btn btn-primary"
+            data-on:click="
+                $loading = true;
+                @get('/api_view/load-more-books?page=' + $page);
+            ">
+            <i class="fas fa-arrow-down"></i> Load More Books
+        </button>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div class="loading-spinner" data-show="$loading">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading more books...</span>
+        </div>
+        <p class="mt-2">Loading more books...</p>
+    </div>
+
+    <!-- End of List Indicator -->
+    <div class="alert alert-info text-center" data-show="!$hasMore && !$loading">
+        <i class="fas fa-check-circle"></i> All books loaded ({{ totalBooks | default(0) }} total)
+    </div>
+
+    <!-- Counter Display (from reference) -->
+    <div class="mt-4">
+        <p>Star Counter: <strong>{{ starcounter }}</strong></p>
+        <p>Test Array:</p>
+        <ul>
+        {% for item in arry %}
+            <li>{{ item.val }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<!-- Add Book Modal -->
+<div class="modal fade" id="addBookModal" tabindex="-1" aria-labelledby="addBookModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" data-signals:newTitle="''" data-signals:newAuthor="''">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="addBookModalLabel">
+                    <i class="fas fa-book"></i> Add New Book
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Debug Info -->
+                <div class="alert alert-info mb-3">
+                    <small>
+                        <strong>Debug2:</strong>
+                        Title: "<span data-text="$newTitle || '(empty)'"></span>" |
+                        Author: "<span data-text="$newAuthor || '(empty)'"></span>"
+                    </small>
+                </div>
+
+                <form id="addBookForm">
+                    <div class="mb-3">
+                        <label for="bookTitle" class="form-label">Book Title <span class="text-danger">*</span></label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="bookTitle"
+                            name="title"
+                            placeholder="Enter book title"
+                            data-on:input="
+                                $newTitle = el.value;
+                                console.log('Title input:', $newTitle, 'length:', $newTitle.length);
+                                if($newTitle && $newTitle.length >= 5){
+                                    el.classList.remove('is-invalid');
+                                    el.classList.add('is-valid');
+                                }else{
+                                    el.classList.remove('is-valid');
+                                    el.classList.add('is-invalid');
+                                }
+                            "
+                            required
+                        />
+                        <div class="invalid-feedback">
+                            Title must be at least 5 characters
+                        </div>
+                        <div class="valid-feedback">
+                            Looks good!
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="bookAuthor" class="form-label">Author <span class="text-danger">*</span></label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="bookAuthor"
+                            name="author"
+                            placeholder="Enter author name"
+                            data-on:input="
+                                $newAuthor = el.value;
+                                console.log('Author input:', $newAuthor, 'length:', $newAuthor.length);
+                                if($newAuthor && $newAuthor.length > 0){
+                                    el.classList.remove('is-invalid');
+                                    el.classList.add('is-valid');
+                                }else{
+                                    el.classList.remove('is-valid');
+                                    el.classList.add('is-invalid');
+                                }
+                            "
+                            required
+                        />
+                        <div class="invalid-feedback">
+                            Author name is required
+                        </div>
+                        <div class="valid-feedback">
+                            Looks good!
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-success"
+                    data-on:click="
+                        console.log('=== Modal Save clicked ===');
+                        console.log('newTitle:', $newTitle, 'type:', typeof $newTitle, 'length:', $newTitle ? $newTitle.length : 'N/A');
+                        console.log('newAuthor:', $newAuthor, 'type:', typeof $newAuthor, 'length:', $newAuthor ? $newAuthor.length : 'N/A');
+                        const titleLen = $newTitle ? $newTitle.length : 0;
+                        const authorLen = $newAuthor ? $newAuthor.length : 0;
+                        console.log('Validation check: titleLen=' + titleLen + ' (need 5+), authorLen=' + authorLen + ' (need 1+)');
+                        if(titleLen >= 5 && authorLen > 0){
+                            console.log('✅ Validation passed, submitting...');
+                            @post('/api_view/submit', {title: $newTitle, author: $newAuthor});
+                            console.log('📤 POST request sent, waiting for response...');
+                        }else{
+                            console.error('❌ Validation failed!');
+                            alert('Please fill in all required fields correctly.\nTitle: ' + titleLen + ' chars (need 5+)\nAuthor: ' + authorLen + ' chars (need 1+)');
+                        }
+                    ">
+                    <i class="fas fa-save"></i> Save Book
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Book Modal -->
+<div class="modal fade" id="editBookModal" tabindex="-1" aria-labelledby="editBookModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content"
+            data-on:datastar-signal-changed="
+                console.log('🔔 Signal changed in modal:', {
+                    editModalId: $editModalId,
+                    editModalBookId: $editModalBookId,
+                    editModalTitle: $editModalTitle,
+                    editModalAuthor: $editModalAuthor
+                });
+            ">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editBookModalLabel">
+                    <i class="fas fa-edit"></i> Edit Book
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Debug Info -->
+                <div class="alert alert-info mb-3">
+                    <small>
+                        <strong>Debug3:</strong>
+                        ID: "<span data-text="$editModalId || '(empty)'"></span>" |
+                        BookID: "<span data-text="$editModalBookId || '(empty)'"></span>" |
+                        Title: "<span data-text="$editModalTitle || '(empty)'"></span>" |
+                        Author: "<span data-text="$editModalAuthor || '(empty)'"></span>"
+                    </small>
+                </div>
+                <div class="alert alert-warning mb-3">
+                    <small>
+                        <strong>Test:</strong>
+                        <button class="btn btn-sm btn-secondary" data-on:click="
+                            console.log('Setting test values...');
+                            $editModalId = 'test-id-123';
+                            $editModalBookId = '99';
+                            $editModalTitle = 'Test Title';
+                            $editModalAuthor = 'Test Author';
+                            console.log('Test values set:', $editModalId, $editModalBookId, $editModalTitle, $editModalAuthor);
+                        ">Set Test Values</button>
+                    </small>
+                </div>
+
+                <form id="editBookForm">
+                    <div class="mb-3">
+                        <label for="editBookTitle" class="form-label">Book Title <span class="text-danger">*</span></label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="editBookTitle"
+                            name="title"
+                            placeholder="Enter book title"
+                            data-model="editModalTitle"
+                            required
+                        />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editBookAuthor" class="form-label">Author <span class="text-danger">*</span></label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="editBookAuthor"
+                            name="author"
+                            placeholder="Enter author name"
+                            data-model="editModalAuthor"
+                            required
+                        />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    data-on:click="
+                        console.log('=== Modal Update clicked ===');
+                        const titleInput = document.getElementById('editBookTitle');
+                        const authorInput = document.getElementById('editBookAuthor');
+                        const title = titleInput?.value || '';
+                        const author = authorInput?.value || '';
+                        console.log('From inputs - Title:', title, 'Author:', author);
+                        console.log('From signals - editModalId:', $editModalId, 'editModalBookId:', $editModalBookId);
+                        if(title && title.length >= 5 && author && author.length > 0){
+                            console.log('✅ Validation passed, updating...');
+                            @put('/api_view/update-modal/' + $editModalId + '/' + $editModalBookId, {editTitle: title, editAuthor: author});
+                            console.log('📤 PUT request sent, waiting for response...');
+                        }else{
+                            console.error('❌ Validation failed!');
+                            alert('Please fill in all required fields correctly.\\nTitle: ' + title.length + ' chars (need 5+)\\nAuthor: ' + author.length + ' chars (need 1+)');
+                        }
+                    ">
+                    <i class="fas fa-save"></i> Update Book
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Monitor all network requests
+    console.log('=== Book Manager Page Loaded ===');
+    console.log('Datastar should be available');
+
+    // Reset modal signals when modal is shown
+    document.getElementById('addBookModal')?.addEventListener('shown.bs.modal', function () {
+        console.log('📖 Add Book Modal opened - signals should be empty');
+        // Datastar will handle signal initialization from data-signals attributes
+    });
+
+    // Populate edit modal fields when modal shown event fires
+    document.getElementById('editBookModal')?.addEventListener('shown.bs.modal', function () {
+        console.log('📖 Edit Book Modal shown event fired');
+
+        // Wait a bit for SSE to complete
+        setTimeout(() => {
+            const titleInput = document.getElementById('editBookTitle');
+            const authorInput = document.getElementById('editBookAuthor');
+
+            console.log('🔍 Checking inputs:', titleInput, authorInput);
+            console.log('🔍 Current values:', titleInput?.value, authorInput?.value);
+
+            // If values are already set by patchElements, we're done
+            if (titleInput?.value && authorInput?.value) {
+                console.log('✅ Values already populated by patch');
+                return;
+            }
+
+            // Otherwise try to get from signals (as fallback)
+            console.log('⏳ Values empty, trying signals...');
+            setTimeout(() => {
+                // Try window.Datastar.store or other possible locations
+                if (window.$editModalTitle) {
+                    titleInput.value = window.$editModalTitle || '';
+                    authorInput.value = window.$editModalAuthor || '';
+                    console.log('✅ Set from signals:', titleInput.value, authorInput.value);
+                } else {
+                    console.error('❌ Signals not found!');
+                }
+            }, 300);
+        }, 100);
+    });
+
+    // Monitor SSE/EventSource events
+    const originalEventSource = window.EventSource;
+    if (originalEventSource) {
+        window.EventSource = function(...args) {
+            console.log('📡 EventSource created:', args[0]);
+            const es = new originalEventSource(...args);
+
+            es.addEventListener('message', (e) => {
+                console.log('📨 SSE message received:', e.data);
+            });
+
+            es.addEventListener('datastar-patch', (e) => {
+                console.log('🔧 Datastar patch event:', e);
+            });
+
+            es.addEventListener('datastar-signal', (e) => {
+                console.log('🔔 Datastar signal event:', e.data);
+            });
+
+            es.addEventListener('datastar-merge-signals', (e) => {
+                console.log('🔄 Datastar merge-signals event:', e.data);
+            });
+
+            es.onmessage = (e) => {
+                console.log('📬 SSE onmessage:', e);
+            };
+
+            es.addEventListener('error', (e) => {
+                console.error('❌ SSE error:', e);
+            });
+
+            return es;
+        };
+    }
+
+    // Monitor fetch requests
+    const originalFetch = window.fetch;
+    window.fetch = function(...args) {
+        console.log('🌐 Fetch request:', args[0]);
+        return originalFetch.apply(this, args)
+            .then(response => {
+                console.log('✅ Fetch response:', args[0], response.status, response.headers.get('content-type'));
+
+                // If it's SSE, monitor the stream
+                if (response.headers.get('content-type')?.includes('text/event-stream')) {
+                    console.log('📡 SSE stream detected');
+                }
+
+                return response;
+            })
+            .catch(error => {
+                console.error('❌ Fetch error:', args[0], error);
+                throw error;
+            });
+    };
+
+    // Log when page is fully loaded
+    window.addEventListener('load', () => {
+        console.log('✅ Page fully loaded');
+        console.log('Checking for Datastar...');
+
+        // Check if Datastar elements exist
+        const datastarElements = document.querySelectorAll('[data-on\\:click]');
+        console.log(`Found ${datastarElements.length} Datastar click handlers`);
+
+        // List all book rows with their IDs
+        const bookRows = document.querySelectorAll('[id^="book-"]');
+        console.log(`Found ${bookRows.length} book rows:`);
+        bookRows.forEach(row => {
+            console.log(`  - ${row.id}`);
+        });
+    });
+
+    // Helper function for text to clipboard
+    function textToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            console.log('Copied to clipboard: ' + text);
+        }, function(err) {
+            console.error('Could not copy text: ', err);
+        });
+    }
+</script>
+{% endblock %}

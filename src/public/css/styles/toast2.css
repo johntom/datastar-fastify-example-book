@@ -1,0 +1,119 @@
+.toast {
+  display: flex;
+  flex-direction: column;
+  border: solid 1px black;
+  width: 300px;
+  padding: 0.5rem;
+  cursor: default;
+  background-color: whitesmoke;
+  animation-play-state: running;
+}
+
+.toast-progress {
+  background-color: blue;
+  height: 4px;
+}
+
+.toast-entering {
+  animation: toast-in 280ms ease-out both;
+}
+
+.toast-leaving {
+  animation: toast-out 160ms ease-in both;
+}
+
+.toast-progress {
+  width: 100%;
+  transform-origin: left center;
+  animation: toast-progress var(--toast-duration) linear both;
+}
+
+@keyframes toast-progress {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0.25;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0.25;
+    transform: translateY(-30px);
+  }
+}
+.toast-container {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.toast-container:hover .toast,
+.toast-container:hover .toast-progress {
+  animation-play-state: paused;
+}
+
+.toast-container:hover .toast.toast-entering,
+.toast-container:hover .toast.toast-leaving,
+.toast-container:hover .toast.toast-entering .toast-progress,
+.toast-container:hover .toast.toast-leaving .toast-progress {
+  animation-play-state: running;
+}
+/* messagehttps://codepen.io/starfederation/pen/wBKPMPx */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+:root {
+  --base-color: oklch(92.2% 0 0);
+  --base-color-content: oklch(25.3267% 0.015896 252.417568);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --base-color: oklch(25.3267% 0.015896 252.417568);
+    --base-color-content: oklch(92.2% 0 0);
+  }
+}
+
+body {
+  display: grid;
+  place-content: center;
+  background-color: var(--base-color);
+  font-family: system-ui;
+  height: 100vh;
+  padding: 4rem;
+  text-align: center;
+}
+
+div {
+  color: var(--base-color-content);
+  font-size: 2rem;
+}

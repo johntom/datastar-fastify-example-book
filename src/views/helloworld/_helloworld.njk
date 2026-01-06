@@ -1,0 +1,171 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+
+   <style>
+        body {
+            background-color: black;
+            color: white;
+        }
+
+        input[type="file"] {
+            height: 50px;
+            background-color: blueviolet;
+            color: white;
+        }
+
+        input[type="file"]::-webkit-file-upload-button {
+            height: 50px;
+            background-color: blueviolet;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0 15px;
+            margin-right: 10px;
+        }
+
+        .bootstrap-select {
+            width: 300px !important;
+        }
+
+        .bootstrap-select1 {
+            width: 240px !important;
+        }
+
+        .info-header {
+            padding: 8px;
+            background-color: rgb(216, 185, 245);
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .message-area {
+            padding: 8px;
+            background-color: rgb(216, 185, 245);
+            border-radius: 4px;
+            margin-top: 15px;
+            min-height: 40px;
+        }
+
+        .custom-btn {
+            border-radius: 15px;
+            font-weight: bold;
+            width: 150px;
+        }
+
+        .login-btn {
+            border-radius: 25px;
+            font-weight: bold;
+            width: 150px;
+        }
+
+        .upload-section {
+            display: none;
+        }
+
+        .upload-section.show {
+            display: block;
+        }
+
+        /* Hide upload section by default*/
+        #uploadFileSection {
+            display: none;
+        }
+    </style>
+    <!-- Datastar handles multipart support automatically -->
+  
+{# <link rel="stylesheet" href="/public/css/styles/toast.css"> #}
+       <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1>Datastar HelloWorkd</h1>
+        <body class="bg-white dark:bg-gray-900 text-lg max-w-xl mx-auto my-16">
+    <div data-signals:delay="400" class="bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-lg px-6 py-8 ring shadow-xl ring-gray-900/5 space-y-2">
+        <div class="flex justify-between items-center">
+            <h1 class="text-gray-900 dark:text-white text-3xl font-semibold">
+                Datastar SDK Demo
+            </h1>
+            <img src="https://data-star.dev/static/images/rocket-64x64.png" alt="Rocket" width="64" height="64"/>
+        </div>
+        <p class="mt-2">
+            SSE events will be streamed from the backend to the frontend.
+        </p>
+        <div class="space-x-2">
+            <label for="delay">
+                Delay in milliseconds
+            </label>
+            <input data-bind:delay id="delay" type="number" step="100" min="0" class="w-36 rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-sky-500 focus:outline focus:outline-sky-500 dark:disabled:border-gray-700 dark:disabled:bg-gray-800/20" />
+        </div>
+        <button data-on:click="@get(&#39;/hello-world&#39;)" class="rounded-md bg-sky-500 px-5 py-2.5 leading-5 font-semibold text-white hover:bg-sky-700 hover:text-gray-100 cursor-pointer">
+            Start
+        </button>
+    </div>
+    <div class="my-16 text-8xl font-bold text-transparent" style="background: linear-gradient(to right in oklch, red, orange, yellow, green, blue, blue, violet); background-clip: text">
+        <div id="message">Hello, world!</div>
+    </div>
+
+        
+        
+            </div>
+        </div>
+
+
+    <script>
+
+        // Debug: Check if Datastar is loaded (after all scripts load)
+        window.addEventListener('load', () => {
+            // Datastar processes data-* attributes automatically
+            // Check if actions are being processed
+            const hasDatastarAttrs = document.querySelector('[data-on\\:click]') !== null;
+            console.log('Datastar elements found:', hasDatastarAttrs);
+            console.log('Page fully loaded - Datastar should be active');
+
+            // Check if CSS is loaded
+            const container = document.querySelector('.toast-container');
+            if (container) {
+                const styles = window.getComputedStyle(container);
+                console.log('Toast container styles:', {
+                    position: styles.position,
+                    top: styles.top,
+                    right: styles.right,
+                    zIndex: styles.zIndex,
+                    display: styles.display
+                });
+            }
+        });
+
+        // Monitor DOM changes to see if toasts are being added
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.addedNodes.length) {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.classList && node.classList.contains('toast')) {
+                            console.log('🍞 Toast added to DOM!', node);
+                            const styles = window.getComputedStyle(node);
+                            console.log('Toast styles:', {
+                                display: styles.display,
+                                opacity: styles.opacity,
+                                transform: styles.transform,
+                                width: styles.width,
+                                height: styles.height,
+                                backgroundColor: styles.backgroundColor
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
+        // Start observing after page loads
+        window.addEventListener('load', () => {
+            const container = document.querySelector('.toast-container');
+            if (container) {
+                observer.observe(container, { childList: true });
+                console.log('👀 Monitoring .toast-container for changes');
+            }
+        });
+    </script>
+
+{% endblock %}

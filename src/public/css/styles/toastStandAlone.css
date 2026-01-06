@@ -1,0 +1,92 @@
+.toast {
+  display: flex;
+  flex-direction: column;
+  border: solid 1px black;
+  width: 300px;
+  padding: 0.5rem;
+  cursor: default;
+  background-color: whitesmoke;
+  animation-play-state: running;
+}
+
+.toast-progress {
+  background-color: blue;
+  height: 4px;
+}
+
+.toast-entering {
+  animation: toast-in 280ms ease-out both;
+}
+
+.toast-leaving {
+  animation: toast-out 160ms ease-in both;
+}
+
+.toast-progress {
+  width: 100%;
+  transform-origin: left center;
+  animation: toast-progress var(--toast-duration) linear both;
+}
+
+@keyframes toast-progress {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0.25;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0.25;
+    transform: translateY(-30px);
+  }
+}
+.toast-container {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.toast-container .toast {
+  pointer-events: auto;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.toast-container:hover .toast,
+.toast-container:hover .toast-progress {
+  animation-play-state: paused;
+}
+
+.toast-container:hover .toast.toast-entering,
+.toast-container:hover .toast.toast-leaving,
+.toast-container:hover .toast.toast-entering .toast-progress,
+.toast-container:hover .toast.toast-leaving .toast-progress {
+  animation-play-state: running;
+}
+/* messagehttps://codepen.io/starfederation/pen/wBKPMPx */
+/* Removed global body and div styles that conflict with main app layout */

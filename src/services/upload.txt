@@ -1,0 +1,77 @@
+
+// ---
+
+// UPDATED CLIENT-SIDE CODE for the template
+// Add this to your script section in the Nunjucks template
+
+// async function uploadFile() {
+//     const fileInput = document.getElementById('file');
+//     const messageArea = document.getElementById('messageArea');
+    
+//     console.log('🔍 Upload function called');
+//     console.log('📁 File input:', fileInput);
+//     console.log('📋 Files selected:', fileInput.files.length);
+    
+//     if (!fileInput.files.length) {
+//         showMessage('Please select a file first', 'warning');
+//         return;
+//     }
+    
+//     const selectedFile = fileInput.files[0];
+//     console.log('📄 Selected file:', {
+//         name: selectedFile.name,
+//         size: selectedFile.size,
+//         type: selectedFile.type
+//     });
+    
+//     // Create FormData
+//     const formData = new FormData();
+//     formData.append('file', selectedFile);
+    
+//     console.log('📦 FormData created with file');
+    
+//     try {
+//         showMessage('Uploading file...', 'info');
+//         console.log('🚀 Starting upload request...');
+        
+//         const response = await fetch('/upload/videos', {
+//             method: 'POST',
+//             body: formData
+//             // Don't set Content-Type header - let browser set it with boundary
+//         });
+        
+//         console.log('📡 Response received:', {
+//             status: response.status,
+//             statusText: response.statusText,
+//             headers: Object.fromEntries(response.headers.entries())
+//         });
+        
+//         if (!response.ok) {
+//             const errorText = await response.text();
+//             console.error('❌ Response not OK:', errorText);
+//             throw new Error(`HTTP ${response.status}: ${errorText}`);
+//         }
+        
+//         const result = await response.json();
+//         console.log('📋 Upload result:', result);
+        
+//         if (result.success) {
+//             showMessage(
+//                 `✅ File "${result.filename}" uploaded successfully! (${result.size ? (result.size/1024).toFixed(1) + ' KB' : 'Unknown size'})`, 
+//                 'success'
+//             );
+//             fileInput.value = ''; // Clear the input
+//         } else {
+//             showMessage(`❌ Upload failed: ${result.message || result.error}`, 'danger');
+//         }
+        
+//     } catch (error) {
+//         console.error('❌ Upload error:', error);
+//         showMessage(`❌ Upload failed: ${error.message}`, 'danger');
+//     }
+// }
+
+// ---
+
+// Call this function to test server connectivity
+// testMultipart();

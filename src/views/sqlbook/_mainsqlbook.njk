@@ -1,0 +1,589 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+<div class="container mt-4"
+    data-signals="{
+        editingId: '',
+        editModalTitle: '',
+        editModalAuthor: '',
+        editModalId: '',
+        editModalBookId: '',
+        page: 1,
+        hasMore: {{ 'true' if hasMore else 'false' }},
+        loading: false
+    }">
+    <style>
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        td, th {
+            border: 1px solid #383737;
+            text-align: left;
+            padding: 8px;
+        }
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+        .error {
+            color: red;
+        }
+        .error-message {
+            color: red;
+            font-size: 0.9em;
+        }
+        .valid {
+            color: green;
+        }
+        .editing {
+            background-color: #fffacd !important;
+        }
+        .table-warning {
+            background-color: #fff3cd !important;
+        }
+        button:disabled {
+            cursor: not-allowed !important;
+            opacity: 0.5;
+        }
+    </style>
+
+    <h1>{{ title }}</h1>
+    <p>{{ hello }}</p>
+
+    <div id='div1'>
+        <button type="button" class="btn btn-secondary mb-3" onclick="window.location.reload()">
+            Reload Page
+        </button>
+    </div>
+
+    <div class="alert alert-success mb-3">
+        <i class="fas fa-database"></i>
+        <strong>Using SQLite Database v:107</strong> - This is a separate book manager that uses SQLite instead of MongoDB
+        <div class="mt-2">
+            <small>
+                <strong>Infinite Scroll:</strong> Page <span data-text="$page"></span> |
+                Loading: <span data-text="$loading ? 'Yes' : 'No'"></span> |
+                More available: <span data-text="$hasMore ? 'Yes' : 'No'"></span>
+            </small>
+        </div>
+        {# <button class="btn btn-sm btn-warning mt-2" data-on:click="console.log('TEST: Signals =', {page: $page, loading: $loading, hasMore: $hasMore}); $loading = false; console.log('Reset loading to false')">
+            🔧 Test: Reset Loading
+        </button>
+        <button class="btn btn-sm btn-info mt-2" data-on:click="console.log('Manually loading page 2...'); console.log('book-list element:', document.getElementById('book-list')); $loading = true; @get('/api_view_sqlite/load-more-sqlbooks?page=2')">
+            🔧 Test: Load Page 2 Manually
+        </button> #}
+        <button class="btn btn-sm btn-info mt-2" data-on:click="const rows = document.querySelectorAll('#book-list tr'); console.log('Total book rows:', rows.length); rows.forEach((row, i) => console.log(`Row ${i+1}: ${row.id}`));">
+            🔧 List All Book IDs
+        </button>
+    </div>
+
+    <h3>SQLite Book Management with Datastar (Infinite Scroll) and Live Data sync</h3>
+
+    <!-- Add Book Button (Opens Modal) -->
+    <div class="mb-4">
+        <button
+            type="button"
+            class="btn btn-success btn-lg"
+            data-bs-toggle="modal"
+            data-bs-target="#addBookModal"
+            data-on:click="console.log('Opening Add Book modal')">
+            <i class="fas fa-plus-circle"></i> Add New Book
+        </button>
+    </div>
+
+    <!-- Books Table -->
+    <div class="table-responsive"
+         id="table-container"
+         style="max-height: 600px; overflow-y: auto; position: relative;"
+         data-on:scroll="
+            const container = el;
+            const sentinel = document.getElementById('scroll-sentinel');
+            if (sentinel && $hasMore && !$loading) {
+                const containerBottom = container.scrollTop + container.clientHeight;
+                const sentinelTop = sentinel.offsetTop;
+                if (containerBottom >= sentinelTop - 100) {
+                    const nextPage = $page + 1;
+                    console.log('Scroll triggered! Loading page', nextPage);
+                    $loading = true;
+                    @get('/api_view_sqlite/load-more-sqlbooks?page=' + nextPage)
+                }
+            }
+         ">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th colspan="5">
+                        <small class="text-muted">Filter books below  by typing any string in dataset</small>
+                        <input
+                            class="form-control"
+                            placeholder="Filter books..."
+                            data-on:input="
+                                const filter = el.value.toLowerCase();
+                                document.querySelectorAll('#book-list tr').forEach(row => {
+                                    const text = row.textContent.toLowerCase();
+                                    row.style.display = text.includes(filter) ? '' : 'none';
+                                });
+                            "
+                        />
+                        
+                    </th>
+                </tr>
+                <tr>
+                    <th>ID</th>
+                    <th>Book ID</th>
+                    <th>Book Title</th>
+                    <th>Book Author</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="book-list">
+                {% for book in books %}
+                <tr id="book-{{ book.id }}" data-book-id="{{ book.id }}">
+                    <td>{{ book.id }}</td>
+                    <td>{{ book.book_id }}</td>
+                    <td>{{ book.name }}</td>
+                    <td>{{ book.author }}</td>
+                    <td>
+                        <button
+                            class="btn btn-primary btn-sm"
+                            data-on:click="
+                                console.log('Edit clicked for book:', '{{ book.id }}');
+                                console.log('Current editingId:', $editingId);
+                                $editingId = '{{ book.id }}';
+                                console.log('Set editingId to:', $editingId);
+                                console.log('Calling API...');
+                                @get('/api_view_sqlite/get-edit-form-sqlbook/{{ book.id }}');
+                            ">
+                            Edit
+                        </button>
+                        <button
+                            class="btn btn-info btn-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editBookModal"
+                            data-on:click="
+                                console.log('Edit Popup clicked for book:', '{{ book.id }}');
+                                @get('/api_view_sqlite/load-edit-modal-sqlbook/{{ book.id }}');
+                            ">
+                            Edit Popup
+                        </button>
+                        <button
+                            class="btn btn-danger btn-sm"
+                            data-on:click="
+                                console.log('Delete clicked for book:', '{{ book.id }}');
+                                if(confirm('Are you sure you wish to delete this book?')){
+                                    console.log('Delete confirmed');
+                                    @delete('/api_view_sqlite/delete-sqlbook/{{ book.id }}');
+                                }
+                            ">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Infinite Scroll Sentinel (inside scrollable container) -->
+        <div
+            id="scroll-sentinel"
+            class="text-center py-4"
+            data-show="$hasMore && !$loading"
+            data-on:intersect="
+                const nextPage = $page + 1;
+                console.log('Sentinel intersected! Loading page', nextPage);
+                $loading = true;
+                console.log('Sending request to load more books');
+                @get('/api_view_sqlite/load-more-sqlbooks?page=' + nextPage)
+            ">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading more books...</span>
+            </div>
+            <p class="text-muted mt-2">Loading more books...</p>
+        </div>
+
+        <!-- End of Results Message -->
+        <div class="text-center py-4 text-muted" data-show="!$hasMore">
+            <i class="fas fa-check-circle"></i>
+            <p>No more books to load</p>
+        </div>
+    </div>
+
+    <!-- Counter Display -->
+    <div class="mt-4">
+        <p>Star Counter: <strong>{{ starcounter }}</strong></p>
+        <p>Total Books Loaded: <strong id="books-count">{{ books.length }}</strong></p>
+        <p>Current Page: <strong data-text="$page"></strong></p>
+    </div>
+</div>
+
+<!-- Add Book Modal -->
+<div class="modal fade" id="addBookModal" tabindex="-1" aria-labelledby="addBookModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" data-signals="{newTitle: '', newAuthor: ''}">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="addBookModalLabel">
+                    <i class="fas fa-book"></i> Add New Book (SQLite)
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Debug Info -->
+                <div class="alert alert-info mb-3">
+                    <small>
+                        <strong>Debug:</strong>
+                        Title: "<span data-text="$newTitle || '(empty)'"></span>" |
+                        Author: "<span data-text="$newAuthor || '(empty)'"></span>"
+                    </small>
+                </div>
+
+                <form id="addBookForm">
+                    <div class="mb-3">
+                        <label for="bookTitle" class="form-label">Book Title <span class="text-danger">*</span></label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="bookTitle"
+                            name="title"
+                            placeholder="Enter book title"
+                            data-on:input="
+                                $newTitle = el.value;
+                                console.log('Title input:', $newTitle, 'length:', $newTitle.length);
+                                if($newTitle && $newTitle.length >= 5){
+                                    el.classList.remove('is-invalid');
+                                    el.classList.add('is-valid');
+                                }else{
+                                    el.classList.remove('is-valid');
+                                    el.classList.add('is-invalid');
+                                }
+                            "
+                            required
+                        />
+                        <div class="invalid-feedback">
+                            Title must be at least 5 characters
+                        </div>
+                        <div class="valid-feedback">
+                            Looks good!
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="bookAuthor" class="form-label">Author <span class="text-danger">*</span></label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="bookAuthor"
+                            name="author"
+                            placeholder="Enter author name"
+                            data-on:input="
+                                $newAuthor = el.value;
+                                console.log('Author input:', $newAuthor, 'length:', $newAuthor.length);
+                                if($newAuthor && $newAuthor.length > 0){
+                                    el.classList.remove('is-invalid');
+                                    el.classList.add('is-valid');
+                                }else{
+                                    el.classList.remove('is-valid');
+                                    el.classList.add('is-invalid');
+                                }
+                            "
+                            required
+                        />
+                        <div class="invalid-feedback">
+                            Author name is required
+                        </div>
+                        <div class="valid-feedback">
+                            Looks good!
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-success"
+                    data-on:click="
+                        console.log('=== Modal Save clicked ===');
+                        console.log('newTitle:', $newTitle, 'type:', typeof $newTitle, 'length:', $newTitle ? $newTitle.length : 'N/A');
+                        console.log('newAuthor:', $newAuthor, 'type:', typeof $newAuthor, 'length:', $newAuthor ? $newAuthor.length : 'N/A');
+                        const titleLen = $newTitle ? $newTitle.length : 0;
+                        const authorLen = $newAuthor ? $newAuthor.length : 0;
+                        console.log('Validation check: titleLen=' + titleLen + ' (need 5+), authorLen=' + authorLen + ' (need 1+)');
+                        if(titleLen >= 5 && authorLen > 0){
+                            console.log('✅ Validation passed, submitting...');
+                            @post('/api_view_sqlite/submit-sqlbook', {title: $newTitle, author: $newAuthor});
+                            console.log('📤 POST request sent, waiting for response...');
+                        }else{
+                            console.error('❌ Validation failed!');
+                            alert('Please fill in all required fields correctly.\nTitle: ' + titleLen + ' chars (need 5+)\nAuthor: ' + authorLen + ' chars (need 1+)');
+                        }
+                    ">
+                    <i class="fas fa-save"></i> Save Book
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Book Modal -->
+<div class="modal fade" id="editBookModal" tabindex="-1" aria-labelledby="editBookModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content"
+            data-on:datastar-signal-changed="
+                console.log('🔔 Signal changed in modal:', {
+                    editModalId: $editModalId,
+                    editModalBookId: $editModalBookId,
+                    editModalTitle: $editModalTitle,
+                    editModalAuthor: $editModalAuthor
+                });
+            ">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editBookModalLabel">
+                    <i class="fas fa-edit"></i> Edit Book (SQLite)
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Debug Info -->
+                <div class="alert alert-info mb-3">
+                    <small>
+                        <strong>Debug:</strong>
+                        ID: "<span data-text="$editModalId || '(empty)'"></span>" |
+                        BookID: "<span data-text="$editModalBookId || '(empty)'"></span>" |
+                        Title: "<span data-text="$editModalTitle || '(empty)'"></span>" |
+                        Author: "<span data-text="$editModalAuthor || '(empty)'"></span>"
+                    </small>
+                </div>
+
+                <form id="editBookForm">
+                    <div class="mb-3">
+                        <label for="editBookTitle" class="form-label">Book Title <span class="text-danger">*</span></label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="editBookTitle"
+                            name="title"
+                            placeholder="Enter book title"
+                            data-model="editModalTitle"
+                            required
+                        />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editBookAuthor" class="form-label">Author <span class="text-danger">*</span></label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="editBookAuthor"
+                            name="author"
+                            placeholder="Enter author name"
+                            data-model="editModalAuthor"
+                            required
+                        />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                    data-on:click="
+                        console.log('Modal Cancel clicked - unlocking book:', $editModalId);
+                        if($editModalId) {
+                            @post('/api_view_sqlite/unlock-sqlbook/' + $editModalId);
+                        }
+                    ">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    data-on:click="
+                        console.log('=== Modal Update clicked ===');
+                        const titleInput = document.getElementById('editBookTitle');
+                        const authorInput = document.getElementById('editBookAuthor');
+                        const title = titleInput?.value || '';
+                        const author = authorInput?.value || '';
+                        console.log('From inputs - Title:', title, 'Author:', author);
+                        console.log('From signals - editModalId:', $editModalId, 'editModalBookId:', $editModalBookId);
+                        if(title && title.length >= 5 && author && author.length > 0){
+                            console.log('✅ Validation passed, updating...');
+                            @put('/api_view_sqlite/update-modal-sqlbook/' + $editModalId + '/' + $editModalBookId, {editTitle: title, editAuthor: author});
+                            console.log('📤 PUT request sent, waiting for response...');
+                        }else{
+                            console.error('❌ Validation failed!');
+                            alert('Please fill in all required fields correctly.\\nTitle: ' + title.length + ' chars (need 5+)\\nAuthor: ' + author.length + ' chars (need 1+)');
+                        }
+                    ">
+                    <i class="fas fa-save"></i> Update Book
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    console.log('=== SQLite Book Manager Page Loaded ===');
+    console.log('Datastar should be available');
+
+    // Real-time data synchronization across browser tabs/windows
+    const dataSync = new EventSource('/data-sync');
+
+    dataSync.onopen = () => {
+        console.log('🔗 Data sync connected - updates will sync across all browsers');
+    };
+
+    dataSync.onmessage = (event) => {
+        try {
+            const message = JSON.parse(event.data);
+
+            if (message.type === 'connected') {
+                console.log('✅ Data sync active');
+            } else if (message.type === 'book-added') {
+                console.log('📚 Book added by another browser:', message.data.bookId);
+                // Check if book already exists (in case this is the browser that added it)
+                const existingBook = document.getElementById(`book-${message.data.bookId}`);
+                if (!existingBook) {
+                    const bookList = document.getElementById('book-list');
+                    if (bookList) {
+                        bookList.insertAdjacentHTML('beforeend', message.data.bookRow);
+                        console.log('✅ Book row added to table');
+                    }
+                }
+            } else if (message.type === 'book-updated') {
+                console.log('📝 Book updated by another browser:', message.data.bookId);
+                const existingBook = document.getElementById(`book-${message.data.bookId}`);
+                if (existingBook) {
+                    existingBook.outerHTML = message.data.bookRow;
+                    console.log('✅ Book row updated in table');
+                }
+            } else if (message.type === 'book-deleted') {
+                console.log('🗑️ Book deleted by another browser:', message.data.bookId);
+                const existingBook = document.getElementById(`book-${message.data.bookId}`);
+                if (existingBook) {
+                    existingBook.remove();
+                    console.log('✅ Book row removed from table');
+                }
+            } else if (message.type === 'book-locked') {
+                console.log('🔒 Book locked by another user:', message.data.bookId, 'by', message.data.userName);
+                const bookRow = document.getElementById(`book-${message.data.bookId}`);
+                if (bookRow && !bookRow.classList.contains('editing')) {
+                    // Disable Edit and Delete buttons
+                    const actionButtons = bookRow.querySelectorAll('.btn-primary, .btn-info, .btn-danger');
+                    actionButtons.forEach(btn => {
+                        btn.disabled = true;
+                        btn.title = `Locked by ${message.data.userName}`;
+                    });
+                    bookRow.classList.add('table-warning');
+                    console.log('✅ Book row locked in UI (Edit and Delete disabled)');
+                }
+            } else if (message.type === 'book-unlocked') {
+                console.log('🔓 Book unlocked:', message.data.bookId);
+                const bookRow = document.getElementById(`book-${message.data.bookId}`);
+                if (bookRow && !bookRow.classList.contains('editing')) {
+                    // Re-enable Edit and Delete buttons
+                    const actionButtons = bookRow.querySelectorAll('.btn-primary, .btn-info, .btn-danger');
+                    actionButtons.forEach(btn => {
+                        btn.disabled = false;
+                        btn.title = '';
+                    });
+                    bookRow.classList.remove('table-warning');
+                    console.log('✅ Book row unlocked in UI (Edit and Delete enabled)');
+                }
+            }
+        } catch (e) {
+            console.error('Data sync error:', e);
+        }
+    };
+
+    dataSync.onerror = (error) => {
+        console.log('Data sync disconnected - will retry automatically');
+    };
+
+    // DEBUG: Check initial signal values
+    setTimeout(() => {
+        const container = document.querySelector('[data-signals\\:hasMore]');
+        if (container) {
+            const hasMoreAttr = container.getAttribute('data-signals:hasMore');
+            console.log('🔍 DEBUG: data-signals:hasMore attribute =', hasMoreAttr);
+            console.log('🔍 DEBUG: $hasMore signal =', window.datastar?.store?.hasMore);
+            console.log('🔍 DEBUG: $page signal =', window.datastar?.store?.page);
+            console.log('🔍 DEBUG: $loading signal =', window.datastar?.store?.loading);
+        }
+    }, 500);
+
+    // Reset modal signals when modal is shown
+    document.getElementById('addBookModal')?.addEventListener('shown.bs.modal', function () {
+        console.log('📖 Add Book Modal opened - signals should be empty');
+    });
+
+    // Track modal book ID for unlocking if modal is closed without saving
+    let modalEditingBookId = null;
+
+    // Populate edit modal fields when modal shown event fires
+    document.getElementById('editBookModal')?.addEventListener('shown.bs.modal', function () {
+        console.log('📖 Edit Book Modal shown event fired');
+
+        setTimeout(() => {
+            const titleInput = document.getElementById('editBookTitle');
+            const authorInput = document.getElementById('editBookAuthor');
+
+            console.log('🔍 Checking inputs:', titleInput, authorInput);
+            console.log('🔍 Current values:', titleInput?.value, authorInput?.value);
+
+            if (titleInput?.value && authorInput?.value) {
+                console.log('✅ Values already populated by patch');
+                return;
+            }
+
+            console.log('⏳ Values empty, trying signals...');
+            setTimeout(() => {
+                if (window.$editModalTitle) {
+                    titleInput.value = window.$editModalTitle || '';
+                    authorInput.value = window.$editModalAuthor || '';
+                    console.log('✅ Set from signals:', titleInput.value, authorInput.value);
+                } else {
+                    console.error('❌ Signals not found!');
+                }
+            }, 300);
+        }, 100);
+    });
+
+    // Unlock book when modal is closed (X button or click outside)
+    document.getElementById('editBookModal')?.addEventListener('hidden.bs.modal', function () {
+        console.log('📖 Edit Book Modal closed - checking if unlock needed');
+
+        // Use a small delay to avoid unlocking if Update was clicked
+        setTimeout(() => {
+            const editModalId = window.$editModalId;
+            if (editModalId) {
+                console.log('🔓 Unlocking book:', editModalId);
+                // Call unlock endpoint
+                fetch(`/api_view_sqlite/unlock-sqlbook/${editModalId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }).then(() => {
+                    console.log('✅ Book unlocked on modal close');
+                }).catch(err => {
+                    console.error('❌ Failed to unlock book:', err);
+                });
+            }
+        }, 100);
+    });
+
+    // Log when page is fully loaded
+    window.addEventListener('load', () => {
+        console.log('✅ SQLite Book Manager page fully loaded');
+
+        // List all book rows with their IDs
+        const bookRows = document.querySelectorAll('[id^="book-"]');
+        console.log(`Found ${bookRows.length} book rows from SQLite:`);
+        bookRows.forEach(row => {
+            console.log(`  - ${row.id}`);
+        });
+    });
+</script>
+{% endblock %}

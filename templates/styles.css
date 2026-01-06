@@ -1,0 +1,16 @@
+* {
+    margin: 20px;
+    padding: 20px;
+    }
+    body {
+        color: rgb(0,0,255);
+      }
+    #mojage-content{
+      margin: auto;
+      margin-top: 20px;
+      margin-left: 40px;
+      padding: 20px;
+      width: 80%;
+      border: solid .5px #800000;  
+     
+    }

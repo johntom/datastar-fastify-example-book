@@ -1,0 +1,200 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+  {% block seo_meta %}
+    <!-- Page-specific meta tags for homepage -->
+    <title>Bergen Risk Managers | Workers Comp & Liability Claims NJ</title>
+    <meta name="description" content="Bergen Risk Managers provides comprehensive workers compensation and liability claims administration in Northern New Jersey. Expert case management.">
+    <meta name="keywords" content="workers compensation administration, liability claims management, third party administrator, claims administration NJ, workers comp claims">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Bergen Risk Managers | Workers Comp & Liability Claims NJ">
+    <meta property="og:description" content="Expert workers compensation and liability claims administration serving Northern New Jersey businesses.">
+    <meta property="og:url" content="https://bergenrisk.com">
+    <meta property="og:site_name" content="Bergen Risk Managers">
+  {% endblock %}
+  <!-- Essential Meta Tags -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="index, follow">
+
+  <!-- Title Tag (55 characters) -->
+  <title>John Tomaselli's | Datastar examples</title>
+
+  <!-- Meta Description (155 characters) -->
+  <meta name="description" content="Bergen Risk Managers provides comprehensive workers compensation and liability claims administration in Northern New Jersey. Expert case management.">
+
+  <!-- Keywords -->
+  <meta name="keywords" content="workers compensation administration, liability claims management, third party administrator, claims administration NJ, workers comp claims">
+
+  <!-- Author & Company -->
+  <meta name="author" content="Bergen Risk Managers, Inc.">
+  <meta name="company" content="Bergen Risk Managers, Inc.">
+
+  <!-- Geographic Targeting -->
+  <meta name="geo.region" content="US-NJ">
+  <meta name="geo.placename" content="Ramsey, New Jersey">
+  <meta name="geo.position" content="41.0574;-74.1417">
+  <meta name="ICBM" content="41.0574, -74.1417">
+
+  <!-- Business Information -->
+  <meta name="contact" content="201-825-0357">
+  <meta name="address" content="P.O. Box 901, Ramsey, NJ 07446">
+  <meta name="email" content="info@bergenrisk.com">
+
+  <!-- Open Graph Tags -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Bergen Risk Managers | Workers Comp & Liability Claims NJ">
+  <meta property="og:description" content="Expert workers compensation and liability claims administration serving Northern New Jersey businesses.">
+  <meta property="og:url" content="https://bergenrisk.com">
+  <meta property="og:site_name" content="Bergen Risk Managers">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Business Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Bergen Risk Managers, Inc.",
+      "url": "https://bergenrisk.com",
+      "description": "Workers compensation and liability claims administration services",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "P.O. Box 901",
+        "addressLocality": "Ramsey",
+        "addressRegion": "NJ",
+        "postalCode": "07446",
+        "addressCountry": "US"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+1-201-825-0357",
+        "contactType": "customer service",
+        "areaServed": "US-NJ",
+        "availableLanguage": "English"
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      padding: 2px;
+      background-color: #e0e0e0;
+      margin: 20px;
+    }
+
+    .main-container {
+      width: 1200px;
+      max-width: 100%;
+      margin: 0 auto;
+      background-color: #f8f8f8;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .card {
+      transition: transform 0.3s ease;
+      height: 100%;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    }
+
+    .card-header {
+      padding: 15px;
+      background-color: #fff;
+      border-bottom: 1px solid #e5e5e5;
+    }
+
+    .card-img-top {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+
+    .card-title {
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    .responsive-image {
+      height: auto;
+      width: 100%;
+    }
+
+    .intro-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .intro-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .button {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+
+    .button:hover {
+      background-color: #0056b3;
+      color: white;
+    }
+  </style>
+
+  <div class="main-container">
+    <div class="row">
+      <div class="col-12">
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="container-fluid">
+              <div class="text-content mb-4">
+                <h2>GTZ</h2>
+                <h3>
+                  <p>GTZ. Datastar / Fastify Examples</p>
+                </h3>
+              </div>
+
+              <div class="intro-grid mb-5">
+                <div class="image-wrapper">
+                  <img src="/public/images/handshakeColor.png" alt="placeholder image" class="img-fluid rounded">
+                </div>
+                <div>
+                  <p>
+                    Email: jrt@gtz.com</p>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-4 mb-4">
+                {# class="nav-link" #}
+                    <a  href="/api_view/book" class="button w-100 text-center">Book Manager</a>
+                </div>
+                <div class="col-md-4 mb-4">
+                  <a href="/api_view/todo" class="button w-100 text-center">todo</a>
+                </div>
+              </div>
+         
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}

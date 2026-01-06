@@ -1,0 +1,4 @@
+  // - mergeSignals() expects raw string values - Datastar handles encoding automatically
+  // - HTML string embedding (like the inline edit form) needs escaping because values are inserted into JavaScript expressions
+
+  // Now when you click "Edit Popup", the modal should display the book's current title and author values correctly!

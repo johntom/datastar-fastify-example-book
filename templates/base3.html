@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+    <link rel="stylesheet" href="/public/styles/styles.css">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> {{title}}</title>
+</head>
+
+<body>
+    {% block content %}
+    <div id="jrt-content">
+    <h1>{{address.title}}</h1>
+  
+        {{address.city}}<br>
+        {{address.twitterName}}<br>
+        {{address.twitterUrl}}<br>
+        {{address.blogName}} / {{address.blogUrl}}<br>
+    </div>
+
+    <div id="mojage-content">
+        <h1>{{address.title}}</h1>
+      
+            {{address.city}}<br>
+            {{address.twitterName}}<br>
+            {{address.twitterUrl}}<br>
+            {{address.blogName}} / {{address.blogUrl}}<br>
+        </div>
+
+    {% endblock %}
+
+</body>
+
+</html>
+
+<!-- 
+<script id="mojage-template" type="text/x-nunjucks-template">
+    <h1>{{title}}</h1>
+    <address>
+      City : {{city}}<br>
+      Twitter : <a href="{{twitterUrl}}">{{twitterName}}</a><br>
+      Blog : <a href="{{blogUrl}}">{{blogName}}</a>
+    </address>
+  </script>
+  
+
+  <div id="mojage-content"></div> -->

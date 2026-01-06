@@ -1,0 +1,22 @@
+{
+  "restartable": "rs",
+  "ignore": [
+    ".git",
+    "node_modules/**/node_modules",
+    "data/*.sqlite",
+    "clear-console.js"
+  ],
+  "verbose": false,
+  "execMap": {
+    "js": "node"
+  },
+  "events": {
+    "restart": "node clear-console.js"
+  },
+  "watch": [
+    "src/**/*"
+  ],
+  "ext": "js,json,njk",
+  "colours": true,
+  "delay": 500
+}

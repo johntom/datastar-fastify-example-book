@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://unpkg.com/tailwindcss/dist/base.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/tailwindcss/dist/components.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/@tailwindcss/typography/dist/typography.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/tailwindcss/dist/utilities.min.css" />
+
+    <!-- <script src="/public/index.js"></script> -->
+    <!-- or -->
+    <script src="/public/static1.js"></script>
+
+    <title>Fastify Web Static Demo</title>
+    <link rel="stylesheet" href="/public/styles/styles.css">
+</head>
+
+<body>
+
+    {% block content %}
+    <h1>Hello base 4 {{title}}</h1>
+    <div id="jrt-content">
+        <img style='max-width:200px;' src="/public/images/sample.jpg" />
+        <button id="my-button">
+            The button click
+        </button>
+        <div id="mojage-content">
+            <h1>{{address.title}}</h1>
+
+            {{address.city}}<br>
+            {{address.twitterName}}<br>
+            {{address.twitterUrl}}<br>
+            {{address.blogName}} / {{address.blogUrl}}<br>
+        </div>
+        <img src="/public/images/gato.jpeg" max- />
+
+
+        {% endblock %}
+
+
+        <section class="relative">
+            <nav class="sticky top-0 flex-row w-full bg-white bg-opacity-90 shadow leading-solid">
+                <details>
+                    <summary class="p-4">☰</summary>
+                    <menu class="absolute p-4 m-2 shadow bg-white bg-opacity-90 rounded-lg gap-4">
+                        <a href="">About</a>
+                        <a href="">Work</a>
+                        <a href="">Projects</a>
+                        <a href="">etc</a>
+                    </menu>
+                </details>
+                <a href="/" class="flex justify-center flex-auto px-2 font-bold">
+                    Jack H. Peterson
+                </a>
+                <details>
+                    <summary class="act p-4">@</summary>
+                    <menu class="absolute m-2 p-4 shadow bg-white bg-opacity-90 rounded-lg gap-4 right-0">
+                        <a href="">Twitter</a>
+                        <a href="">Email</a>
+                        <a href="">Phone</a>
+                        <a href="">Twitch</a>
+                    </menu>
+                </details>
+            </nav>
+            <article class="snap-start flex-none min-h-screen bg-gray-100">
+                <section class="py-24 px-4 prose mx-auto">
+                    <h1 class="text-xl">My Site</h1>
+                    <h2>🤨 The Problem</h2>
+                    <p>I'm sure you've seen hundreds of developer sites, and thought: <q
+                            class="px-2 my-2 border-l italic ">Damn, I need to redesign my whole site.</q> I've gotten
+                        sick of remaking my site countless times just to have my ambition fizzle out before I ship it. I
+                        didn't want to crush my desire to rebuild my site all the time. It's hard finding a cool idea
+                        you want to explore, but finding ways to make it work with your current site, or throw it out
+                        and start over.
+                    </p>
+                    <h2>🥅 The Goals</h2>
+                    <p>
+                        There are a couple things I'd like to be able to do: Allow my site to be flexible, Allow my
+                        ambition to be small, Persist old pages but most importantly, allow my site to evolve.
+                    </p>
+                    <h2>💡 The Idea!</h2>
+                    <p>It's a pretty dumb idea, but I hope it works as the site grows. Essentially, I'm going to build
+                        my site as a LONG scroll. Just one big ol' page in chronological order. I think normally this
+                        would be a disaster, but the web has changed, and so has my perception of it. Plus there are a
+                        bunch of great tools to assist me in this endeavor.</p>
+                    <h2>📐 The How</h2>
+                    <p>This whole concept hinges on a few web concepts.</p>
+                    <h3>The new CSS :where() psuedo selector</h3>
+                    <p>This new CSS psuedo selector can totally kill any specificity, and can scope without creating
+                        specificity issues with utility css and other more opinionated tools. If CSS is prefixed with a
+                        <code class="inline">:where(.namespace)</code>, there shouldn't be any CSS leaking between
+                        pages.</p>
+                    <h3>CSS Scroll Snap</h3>
+                    <p>
+                        This CSS rule is nice. Think how tik-tok is just 1 LONG page full of videos. Normally that would
+                        be CHAOS and a total nightmare. However, only one video can be in frame at once, so it doesn't
+                        feel like 1 page, full of hundreds of videos, but rather 1 video per page. I hope to create that
+                        UX with this website.
+                    </p>
+                    <h3>HTMX</h3>
+                    <p>Perhaps I will use HTMX, perhaps I wont. Regardless, the perception shift HTMX created has
+                        influenced this idea. There are 3 parts where HTMX has inspired this: First, the idea of just
+                        using HTML over the wire. Second, the little on-event-attribute that fires when something rolls
+                        into view. SPA like behavior by pulling a full html document and combining it with the current
+                        html document.</p>
+                    <h3>TikTok</h3>
+                    <p>Lol, Dumb. But the UI/UX for that app is pretty neat. ALL VIDEOS EXIST ON THE SAME PAGE WHICH IS
+                        INSANE. but the scroll snap makes that point far less obvious.</p>
+                    <h3>The Vue3 Composition API</h3>
+                    <p>I don't know what to call it, It's not a Vue only idea, but was largely popularized by it.
+                        Essentailly, you just write code where it'll live. Styles/HTML/Scripts. I call it a triple, but
+                        I'm not sure what it's called. Basically this pattern is ideal IMO. It's perfect for first page
+                        loads, and I find it really to reasona about. Everything lives on one file, no running from file
+                        to file, trying to understand what file, added to what build process, created the bundle output
+                        that's giving you trouble.</p>
+                    <h2>💫 Mix it up.</h2>
+                    <p>I think the scroll snapping will make multiple-pages on one scroll more approachable. :where()
+                        will give my triples, the ability to namespace without creating specificity headaches for my
+                        utilityCSS. HTMX will handle combining the individual HTML pages together client side. 11ty will
+                        take these raw triples I make, and combine them with a valid HTML template, and set up loading
+                        previous and next pages when a page is scrolled to.</p>
+                    <h2>👋 Conclusion</h2>
+                    <p>It'll likely get messy. There will be mistakes I make. but I think I can keep nav elements
+                        sticky, and allow posts to exist within those nav eras. I think this is a pretty neat idea, I'm
+                        interested in exploring it, I'll keep this page updated with the progress I'm making or why I've
+                        decided to abandon it.</p>
+                </section>
+            </article>
+            <article class="snap-start flex-none min-h-screen bg-blue-500">
+
+            </article>
+            <article class="snap-start flex-none min-h-screen bg-green-500"></article>
+            <article class="snap-start flex-none min-h-screen bg-purple-500"></article>
+        </section>
+        <section class="relative">
+            <nav class="sticky top-0 flex-row w-full bg-white bg-opacity-90 shadow leading-solid">
+                <details>
+                    <summary class="p-4">☰</summary>
+                    <menu class="absolute p-4 m-2 shadow bg-white bg-opacity-90 rounded-lg gap-4">
+                        <a href="">About</a>
+                        <a href="">Work</a>
+                        <a href="">Projects</a>
+                        <a href="">etc</a>
+                    </menu>
+                </details>
+                <a href="/" class="flex justify-center flex-auto px-2 font-bold">
+                    Archive
+                </a>
+                <details>
+                    <summary class="act p-4">@</summary>
+                    <menu class="absolute m-2 p-4 shadow bg-white bg-opacity-90 rounded-lg gap-4 right-0">
+                        <a href="">Twitter</a>
+                        <a href="">Email</a>
+                        <a href="">Phone</a>
+                        <a href="">Twitch</a>
+                    </menu>
+                </details>
+            </nav>
+            <article class="snap-start flex-none min-h-screen bg-blue-500"></article>
+            <article class="snap-start flex-none min-h-screen bg-green-500"></article>
+            <article class="snap-start flex-none min-h-screen bg-purple-500"></article>
+        </section>
+
+
+
+
+</body>
+
+</html>
