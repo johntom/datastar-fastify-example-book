@@ -184,14 +184,18 @@ fastify.addHook('onSend', async (request, reply, payload) => {
 
 const start = async () => {
   try {
-    await fastify.listen({ port: process.env.port || 80, host: process.env.host })
+    const port = process.env.PORT || process.env.port || 3000;
+    const host = process.env.HOST || process.env.host || '0.0.0.0';
+  //  await fastify.listen({ port, host })
+
+    fastify.listen({  host })
 
 
     console.log(`Server is running on ${fastify.server.address().port}/form`)
 
     console.log(`see views/form.njk   extends "layout.njk `)
     console.log(`launcg ndoe with npm start  `)
-     console.log(`http://127.0.0.1/3000 `)
+     // console.log(`http://127.0.0.1/3000 `)
 
   } catch (err) {
     fastify.log.error(err)
