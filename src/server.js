@@ -54,11 +54,17 @@ console.log(' @fastify/multipart ')
 
 // Register cookie and session support
 fastify.register(require('@fastify/cookie'))
+
+// Determine if we're in production (HTTPS) or development (HTTP)
+const isProduction = process.env.NODE_ENV === 'production'
+console.log('NODE_ENV:', process.env.NODE_ENV)
+console.log('Session cookie secure:', isProduction)
+
 fastify.register(require('@fastify/session'), {
   cookieName: 'sessionId',
   secret: 'a-secret-key-that-should-be-changed-in-production',
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction,  // false for HTTP (localhost), true for HTTPS (production)
     httpOnly: true,
     sameSite: 'lax',
     maxAge: 30 * 60 * 1000 // 30 minutes

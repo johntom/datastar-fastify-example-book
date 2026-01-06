@@ -1,7 +1,32 @@
 {% extends "layout.njk" %}
 
 {% block content %}
+<script>
+    // Generate persistent client ID for lock management (works even without cookies)
+    // Use try-catch because DuckDuckGo and other privacy browsers may block localStorage
+    try {
+        if (!localStorage.getItem('sqlbook_client_id')) {
+            localStorage.setItem('sqlbook_client_id', 'client-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9));
+        }
+        window.sqlbookClientId = localStorage.getItem('sqlbook_client_id');
+    } catch (e) {
+        // localStorage blocked - use sessionStorage or memory fallback
+        console.warn('localStorage blocked, using fallback for clientId');
+        try {
+            if (!sessionStorage.getItem('sqlbook_client_id')) {
+                sessionStorage.setItem('sqlbook_client_id', 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9));
+            }
+            window.sqlbookClientId = sessionStorage.getItem('sqlbook_client_id');
+        } catch (e2) {
+            // Both blocked - use in-memory ID (will change on refresh but better than nothing)
+            window.sqlbookClientId = 'memory-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            console.warn('sessionStorage also blocked, using memory-only clientId');
+        }
+    }
+    console.log('sqlbookClientId:', window.sqlbookClientId);
+</script>
 <div class="container mt-4"
+    id="sqlbook-container"
     data-signals="{
         editingId: '',
         editModalTitle: '',
@@ -10,8 +35,43 @@
         editModalBookId: '',
         page: 1,
         hasMore: {{ 'true' if hasMore else 'false' }},
-        loading: false
+        loading: false,
+        clientId: ''
     }">
+<script>
+    // Set clientId signal immediately and keep trying until Datastar is ready
+    (function() {
+        const setClientId = () => {
+            // Try multiple ways to access Datastar store
+            const stores = [
+                window.ds?.store,
+                window.Datastar?.store,
+                window.datastar?.store,
+                document.querySelector('[data-signals]')?.__datastar__?.store
+            ];
+
+            for (const store of stores) {
+                if (store && typeof store === 'object') {
+                    store.clientId = window.sqlbookClientId;
+                    console.log('✅ clientId set:', window.sqlbookClientId);
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        // Keep trying until it works
+        if (!setClientId()) {
+            const interval = setInterval(() => {
+                if (setClientId()) {
+                    clearInterval(interval);
+                }
+            }, 50);
+            // Stop trying after 2 seconds
+            setTimeout(() => clearInterval(interval), 2000);
+        }
+    })();
+</script>
     <style>
         table {
             font-family: arial, sans-serif;
@@ -78,9 +138,12 @@
         </button>
     </div>
 
-    <h3>SQLite Book Management with Datastar (Infinite Scroll) and Live Data sync</h3>
+    
+    <!-- Add Book Button (Opens Modal) 
+    <h3>SQLite Book Management with Datastar ,Infinite Scroll,Live Data sync and lock for  CHROME
+    </h3>
 
-    <!-- Add Book Button (Opens Modal) -->
+    -->
     <div class="mb-4">
         <button
             type="button"

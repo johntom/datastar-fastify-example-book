@@ -29,12 +29,12 @@ module.exports = async function (fastify, opts) {
       console.log(`hasMore type: ${typeof hasMore}`);
       console.log(`Loaded ${books.length} of ${totalBooks} books from SQLite (page 1)`);
 
-      const title = 'SQLite Book Manager v1.0';
+      const title = 'Datastar/Fastify/SQLite Book Manager v1.0';
       const starcounter = 9;
 
       return reply.view('sqlbook/_mainsqlbook.njk', {
         title: title,
-        hello: 'Datastar/Fastify/SQLite/Nunjucks with Infinite Scroll',
+        hello: 'Infinite Scroll,Live Data sync and lock for CHROME',
         books: books,
         starcounter: starcounter,
         totalBooks: totalBooks,
@@ -237,22 +237,25 @@ module.exports = async function (fastify, opts) {
     console.log('Request ID:', id);
 
     try {
-      // Get or create session ID
-      const sessionId = req.session.sessionId || req.sessionId || `session-${Date.now()}-${Math.random()}`
+      // Read signals to get clientId from Datastar
+      const result = await req.readSignals();
+      const signals = result.signals || {};
 
-      // Try to lock the record
-      const lockResult = fastify.lockRecord(id, sessionId, 'User')
+      // Get clientId from signals, or create a new one
+      let clientId = signals.clientId;
+      const isNew = !clientId;
+      if (!clientId) {
+        clientId = 'client-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+      }
+      console.log('Client ID:', clientId, isNew ? '(NEW)' : '(EXISTING)');
 
+      const lockResult = fastify.lockRecord(id, clientId, 'User');
       if (!lockResult.success) {
-        console.log(`❌ Cannot edit - ${lockResult.message}`)
-
-        // Return error message instead of edit form
+        console.log(`❌ Cannot edit - ${lockResult.message}`);
         await reply.datastar(async (sse) => {
-          sse.executeScript(`
-            alert('${lockResult.message}. Please wait until they finish editing.');
-          `)
-        })
-        return
+          sse.executeScript(`alert('${lockResult.message}. Please wait until they finish editing.');`);
+        });
+        return;
       }
 
       const db = getBookDb();
@@ -262,7 +265,6 @@ module.exports = async function (fastify, opts) {
 
       if (!book) {
         console.error('❌ Book not found:', id);
-        fastify.unlockRecord(id, sessionId) // Unlock if book not found
         return reply.status(404).send({ error: 'Book not found' });
       }
 
@@ -289,7 +291,9 @@ module.exports = async function (fastify, opts) {
           selector: `#book-${book.id}`,
           mode: "outer"
         });
-        console.log('✅ Edit form SSE response sent successfully');
+        // Send clientId back to client so it persists in Datastar signals
+        sse.patchSignals({ clientId: clientId });
+        console.log('✅ Edit form SSE response sent, clientId:', clientId);
       });
     } catch (error) {
       console.error('❌ Error in get-edit-form-sqlbook:', error);
@@ -302,9 +306,11 @@ module.exports = async function (fastify, opts) {
     const { id } = req.params;
 
     try {
-      // Get session ID and unlock the record
-      const sessionId = req.session.sessionId || req.sessionId || `session-${Date.now()}-${Math.random()}`
-      fastify.unlockRecord(id, sessionId)
+      // Read clientId from signals
+      const result = await req.readSignals();
+      const clientId = result.signals?.clientId;
+      console.log('Cancel edit - clientId:', clientId);
+      if (clientId) fastify.unlockRecord(id, clientId);
 
       const db = getBookDb();
       const book = db.getBookById(parseInt(id, 10));
@@ -365,11 +371,14 @@ module.exports = async function (fastify, opts) {
       console.log('=== UPDATE SQLITE BOOK CALLED ===');
       console.log('Update request body:', JSON.stringify(req.body, null, 2));
 
-      // Get session ID and unlock the record after update
-      const sessionId = req.session.sessionId || req.sessionId || `session-${Date.now()}-${Math.random()}`
+      // Read signals from Datastar request
+      const result = await req.readSignals();
+      console.log('Signals:', JSON.stringify(result.signals, null, 2));
 
-      const title = req.body.editTitle || req.body.edittitle || req.body.title;
-      const author = req.body.editAuthor || req.body.editauthor || req.body.author;
+      // Try signals first, then body
+      const signals = result.signals || {};
+      const title = signals.editTitle || req.body?.editTitle || req.body?.edittitle || req.body?.title;
+      const author = signals.editAuthor || req.body?.editAuthor || req.body?.editauthor || req.body?.author;
 
       console.log('✅ Extracted values:');
       console.log('   title:', title);
@@ -382,8 +391,17 @@ module.exports = async function (fastify, opts) {
       const db = getBookDb();
       db.updateBook(parseInt(id, 10), { name: title, author: author });
 
-      // Unlock the record after successful update
-      fastify.unlockRecord(id, sessionId);
+      // Unlock using clientId from signals
+      const clientId = signals.clientId;
+      console.log('=== INLINE UPDATE UNLOCK ===');
+      console.log('Book ID:', id);
+      console.log('Client ID from signals:', clientId);
+      if (clientId) {
+        const unlockResult = fastify.unlockRecord(id, clientId);
+        console.log('Unlock result:', JSON.stringify(unlockResult));
+      } else {
+        console.log('⚠️ No clientId found in signals, cannot unlock!');
+      }
 
       // Fetch fresh data
       const book = db.getBookById(parseInt(id, 10));
@@ -449,28 +467,33 @@ module.exports = async function (fastify, opts) {
     console.log('Book ID:', id);
 
     try {
-      // Get or create session ID
-      const sessionId = req.session.sessionId || req.sessionId || `session-${Date.now()}-${Math.random()}`
+      // Read signals to get clientId from Datastar
+      const result = await req.readSignals();
+      const signals = result.signals || {};
 
-      // Try to lock the record
-      const lockResult = fastify.lockRecord(id, sessionId, 'User')
-
-      if (!lockResult.success) {
-        console.log(`❌ Cannot edit - ${lockResult.message}`)
-
-        // Show alert and don't open modal
-        await reply.datastar(async (sse) => {
-          sse.executeScript(`
-            (() => {
-              alert('${lockResult.message}. Please wait until they finish editing.');
-              const modalEl = document.getElementById('editBookModal');
-              const modal = bootstrap.Modal.getInstance(modalEl);
-              if(modal) modal.hide();
-            })();
-          `)
-        })
-        return
+      // Get clientId from signals, or create a new one
+      let clientId = signals.clientId;
+      const isNew = !clientId;
+      if (!clientId) {
+        clientId = 'client-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
       }
+      console.log('Client ID:', clientId, isNew ? '(NEW)' : '(EXISTING)');
+
+      const lockResult = fastify.lockRecord(id, clientId, 'User');
+      if (!lockResult.success) {
+          console.log(`❌ Cannot edit - ${lockResult.message}`);
+          await reply.datastar(async (sse) => {
+            sse.executeScript(`
+              (() => {
+                alert('${lockResult.message}. Please wait until they finish editing.');
+                const modalEl = document.getElementById('editBookModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if(modal) modal.hide();
+              })();
+            `);
+          });
+          return;
+        }
 
       const db = getBookDb();
       const book = db.getBookById(parseInt(id, 10));
@@ -479,7 +502,6 @@ module.exports = async function (fastify, opts) {
 
       if (!book) {
         console.error('❌ Book not found:', id);
-        fastify.unlockRecord(id, sessionId) // Unlock if book not found
         return reply.status(404).send({ error: 'Book not found' });
       }
 
@@ -487,12 +509,15 @@ module.exports = async function (fastify, opts) {
         const escapedTitleHTML = (book.name || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         const escapedAuthorHTML = (book.author || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
+        // Send clientId back to client so it persists in Datastar signals
         sse.patchSignals({
           editModalId: book.id,
           editModalBookId: book.book_id,
           editModalTitle: book.name || '',
-          editModalAuthor: book.author || ''
+          editModalAuthor: book.author || '',
+          clientId: clientId
         });
+        console.log('✅ Modal loaded, clientId:', clientId);
 
         const formHtml = `<form id="editBookForm">
             <div class="mb-3">
@@ -544,11 +569,14 @@ module.exports = async function (fastify, opts) {
       console.log('=== UPDATE-MODAL SQLITE BOOK CALLED ===');
       console.log('Update request body:', JSON.stringify(req.body, null, 2));
 
-      // Get session ID and unlock the record after update
-      const sessionId = req.session.sessionId || req.sessionId || `session-${Date.now()}-${Math.random()}`
+      // Read signals from Datastar request
+      const result = await req.readSignals();
+      console.log('Signals:', JSON.stringify(result.signals, null, 2));
 
-      const title = req.body.editTitle || req.body.editModalTitle || req.body.edittitle || req.body.title;
-      const author = req.body.editAuthor || req.body.editModalAuthor || req.body.editauthor || req.body.author;
+      // Try signals first, then body
+      const signals = result.signals || {};
+      const title = signals.editTitle || signals.editModalTitle || req.body?.editTitle || req.body?.editModalTitle || req.body?.edittitle || req.body?.title;
+      const author = signals.editAuthor || signals.editModalAuthor || req.body?.editAuthor || req.body?.editModalAuthor || req.body?.editauthor || req.body?.author;
 
       console.log('✅ Extracted values:');
       console.log('   title:', title);
@@ -562,8 +590,17 @@ module.exports = async function (fastify, opts) {
       const db = getBookDb();
       db.updateBook(parseInt(id, 10), { name: title, author: author });
 
-      // Unlock the record after successful update
-      fastify.unlockRecord(id, sessionId);
+      // Unlock using clientId from signals
+      const clientId = signals.clientId;
+      console.log('=== MODAL UPDATE UNLOCK ===');
+      console.log('Book ID:', id);
+      console.log('Client ID from signals:', clientId);
+      if (clientId) {
+        const unlockResult = fastify.unlockRecord(id, clientId);
+        console.log('Unlock result:', JSON.stringify(unlockResult));
+      } else {
+        console.log('⚠️ No clientId found in signals, cannot unlock!');
+      }
 
       const book = db.getBookById(parseInt(id, 10));
 
@@ -603,11 +640,22 @@ module.exports = async function (fastify, opts) {
           selector: `#book-${book.id}`,
           mode: "outer"
         });
+        // Reset modal signals so next edit popup works
+        sse.patchSignals({
+          editModalId: '',
+          editModalBookId: '',
+          editModalTitle: '',
+          editModalAuthor: '',
+          editingId: ''
+        });
         sse.executeScript(`
           (() => {
             const modalEl = document.getElementById('editBookModal');
             const modal = bootstrap.Modal.getInstance(modalEl);
             if(modal) modal.hide();
+            // Clear the form inputs
+            const form = document.getElementById('editBookForm');
+            if(form) form.reset();
           })();
         `);
       });
@@ -630,23 +678,17 @@ module.exports = async function (fastify, opts) {
   // Unlock book (for modal cancel)
   fastify.post('/unlock-sqlbook/:id', async (req, reply) => {
     const { id } = req.params;
+    console.log('Unlock called for book:', id);
 
-    try {
-      console.log('Unlocking SQLite book:', id);
+    // Read clientId from signals
+    const result = await req.readSignals();
+    const clientId = result.signals?.clientId;
+    console.log('Unlock - clientId:', clientId);
+    if (clientId) fastify.unlockRecord(id, clientId);
 
-      const sessionId = req.session.sessionId || req.sessionId || `session-${Date.now()}-${Math.random()}`
-      const unlockResult = fastify.unlockRecord(id, sessionId)
-
-      await reply.datastar(async (sse) => {
-        // Just return success - unlock is handled by the broadcast
-        sse.patchSignals({ unlockSuccess: true })
-      });
-
-      console.log('✅ Book unlocked successfully');
-    } catch (error) {
-      console.error('Error in unlock-sqlbook:', error);
-      return reply.status(500).send({ error: 'Failed to unlock book' });
-    }
+    await reply.datastar(async (sse) => {
+      sse.patchSignals({ unlockSuccess: true })
+    });
   });
 
   // Delete book
