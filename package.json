@@ -1,7 +1,7 @@
 {
     "name": "datastar-fastify-crud-demo",
     "version": "1.0.0",
-    "description": "Form handling with Fastify, Nunjucks and HTMX",
+    "description": "Form handling with Fastify, Nunjucks and Datastar",
     "main": "src/server.js",
     "scripts": {
         "start": "node src/server.js",
