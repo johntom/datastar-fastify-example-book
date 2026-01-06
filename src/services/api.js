@@ -6,6 +6,7 @@ const dayjs = require("dayjs");
 const utc = require("dayjs/plugin/utc"); // ES 2015
 //  bad const { PatchMode } = require('@johntom/datastar-fastify-sdk');
 const { PatchMode } = require('@johntom/datastar-fastify');
+const { getTodoDb } = require('../db/sqlite-helper');
 dayjs.extend(utc);
 //   val = dayjs.utc(val.toLocaleString()).format('MM/DD/YYYY')
 let froiName, sroiName; // iniversal
@@ -741,21 +742,12 @@ fastify.get('/console-log', async (request, reply) => {
 });
 
 // ========================================
-// Todo App API Endpoints
+// Todo App API Endpoints (SQLite-backed)
 // ========================================
 
-// In-memory store for todos
-const todos = new Map();
+// Get the todo database instance
+const todoDb = getTodoDb();
 
-// Seed some initial data
-todos.set('1', { id: '1', text: 'Learn Datastar', completed: true, createdAt: new Date() });
-todos.set('2', { id: '2', text: 'Build something awesome', completed: false, createdAt: new Date() });
-todos.set('3', { id: '3', text: 'Share with the world', completed: false, createdAt: new Date() });
-
-// Generate unique ID
-function generateId() {
-  return Math.random().toString(36).substring(2, 9);
-}
 
 // Escape HTML for todos
 function escapeHtml(text) {
@@ -787,15 +779,9 @@ function renderTodoItem(todo) {
   `;
 }
 
-// Render the todo list
+// Render the todo list (uses SQLite)
 function renderTodoList(filter = 'all') {
-  let filtered = Array.from(todos.values());
-
-  if (filter === 'active') {
-    filtered = filtered.filter(t => !t.completed);
-  } else if (filter === 'completed') {
-    filtered = filtered.filter(t => t.completed);
-  }
+  const filtered = todoDb.getTodos({ filter });
 
   if (filtered.length === 0) {
     return '<li id="empty-state" class="empty">No todos yet!</li>';
@@ -804,11 +790,10 @@ function renderTodoList(filter = 'all') {
   return filtered.map(renderTodoItem).join('');
 }
 
-// Render the footer with counts and filters
+// Render the footer with counts and filters (uses SQLite)
 function renderFooter(activeFilter) {
-  const total = todos.size;
-  const active = Array.from(todos.values()).filter(t => !t.completed).length;
-  const completed = total - active;
+  const stats = todoDb.getStats();
+  const { total, active, completed } = stats;
 
   return `
     <footer id="todo-footer" class="footer">
@@ -837,16 +822,17 @@ function renderFooter(activeFilter) {
   `;
 }
 
-// Get all todos
+// Get all todos (SQLite)
 fastify.get('/todosapp', async (request, reply) => {
-  const todosArray = Array.from(todos.values());
+  const todosArray = todoDb.getTodos();
   return reply.send({ todos: todosArray });
 });
 
-// Create a new todo (using /todosapp to avoid conflict with basic /todos)
+// Create a new todo (SQLite)
 fastify.post('/todosapp', async (request, reply) => {
   const result = await request.readSignals();
   const text = result.signals?.newTodoText?.trim();
+  const filter = result.signals?.filter || 'all';
 
   if (!text) {
     return reply.datastar((sse) => {
@@ -854,69 +840,99 @@ fastify.post('/todosapp', async (request, reply) => {
     });
   }
 
-  const id = generateId();
-  const todo = {
-    id,
-    text,
-    completed: false,
-    createdAt: new Date(),
-  };
+  const createResult = todoDb.createTodo({ text });
+  const todo = createResult.todo;
 
-  todos.set(id, todo);
+  const todoItemHtml = renderTodoItem(todo);
 
   await reply.datastar((sse) => {
     sse.patchSignals({ newTodoText: '', error: '' });
-    sse.patchElements(renderTodoItem(todo), {
+    sse.patchElements(todoItemHtml, {
       selector: '#todo-list',
       mode: PatchMode.Append,
     });
-    sse.patchElements(renderFooter(result.signals?.filter || 'all'));
+    sse.patchElements(renderFooter(filter));
   });
+
+  // Broadcast to all other connected browsers
+  if (fastify.broadcastDataChange) {
+    fastify.broadcastDataChange('todo-added', {
+      todoId: todo.id,
+      todoHtml: todoItemHtml,
+      footerHtml: renderFooter(filter)
+    });
+  }
 });
 
-// Toggle todo completion
+// Toggle todo completion (SQLite)
 fastify.post('/todosapp/:id/toggle', async (request, reply) => {
   const { id } = request.params;
   const result = await request.readSignals();
-  const todo = todos.get(id);
+  const filter = result.signals?.filter || 'all';
 
-  if (!todo) {
+  const toggleResult = todoDb.toggleTodo(id);
+
+  if (!toggleResult.todo) {
     return reply.status(404).send({ error: 'Todo not found' });
   }
 
-  todo.completed = !todo.completed;
+  const todo = toggleResult.todo;
+  const todoItemHtml = renderTodoItem(todo);
+  const footerHtml = renderFooter(filter);
 
   await reply.datastar((sse) => {
-    sse.patchElements(renderTodoItem(todo));
-    sse.patchElements(renderFooter(result.signals?.filter || 'all'));
+    sse.patchElements(todoItemHtml);
+    sse.patchElements(footerHtml);
   });
+
+  // Broadcast to all other connected browsers
+  if (fastify.broadcastDataChange) {
+    fastify.broadcastDataChange('todo-toggled', {
+      todoId: todo.id,
+      todoHtml: todoItemHtml,
+      footerHtml: footerHtml
+    });
+  }
 });
 
-// Delete a todo
+// Delete a todo (SQLite)
 fastify.delete('/todosapp/:id', async (request, reply) => {
   const { id } = request.params;
   const result = await request.readSignals();
+  const filter = result.signals?.filter || 'all';
 
-  if (!todos.has(id)) {
+  const existingTodo = todoDb.getTodoById(id);
+  if (!existingTodo) {
     return reply.status(404).send({ error: 'Todo not found' });
   }
 
-  todos.delete(id);
+  todoDb.deleteTodo(id);
+  const stats = todoDb.getStats();
+  const footerHtml = renderFooter(filter);
 
   await reply.datastar((sse) => {
     sse.removeElements(`#todo-${id}`);
 
-    if (todos.size === 0) {
+    if (stats.total === 0) {
       sse.patchElements('<li id="empty-state" class="empty">No todos yet!</li>', {
         selector: '#todo-list',
         mode: PatchMode.Inner,
       });
     }
-    sse.patchElements(renderFooter(result.signals?.filter || 'all'));
+    sse.patchElements(footerHtml);
   });
+
+  // Broadcast to all other connected browsers
+  if (fastify.broadcastDataChange) {
+    fastify.broadcastDataChange('todo-deleted', {
+      todoId: id,
+      isEmpty: stats.total === 0,
+      footerHtml: footerHtml
+    });
+  }
 });
 
-// Filter todos
+// Filter todos (SQLite)
 fastify.post('/todosapp/filter/:filter', async (request, reply) => {
   const { filter } = request.params;
 
@@ -930,23 +946,31 @@ fastify.post('/todosapp/filter/:filter', async (request, reply) => {
   });
 });
 
-// Clear completed todos
+// Clear completed todos (SQLite)
 fastify.post('/todosapp/clear-completed', async (request, reply) => {
   const result = await request.readSignals();
+  const filter = result.signals?.filter || 'all';
 
-  for (const [id, todo] of todos) {
-    if (todo.completed) {
-      todos.delete(id);
-    }
-  }
+  todoDb.clearCompleted();
+
+  const listHtml = renderTodoList(filter);
+  const footerHtml = renderFooter(filter);
 
   await reply.datastar((sse) => {
-    sse.patchElements(renderTodoList(result.signals?.filter || 'all'), {
+    sse.patchElements(listHtml, {
       selector: '#todo-list',
       mode: PatchMode.Inner,
     });
-    sse.patchElements(renderFooter(result.signals?.filter || 'all'));
+    sse.patchElements(footerHtml);
   });
+
+  // Broadcast to all other connected browsers
+  if (fastify.broadcastDataChange) {
+    fastify.broadcastDataChange('todos-cleared', {
+      listHtml: listHtml,
+      footerHtml: footerHtml
+    });
+  }
 });
 
 const citiesByCountry = {

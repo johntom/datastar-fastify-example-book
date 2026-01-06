@@ -112,7 +112,7 @@ app.get('/', async (request, reply) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Datastar Todo App</title>
-  <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.7/bundles/datastar.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.6/bundles/datastar.js"></script>
   <style>
     * { box-sizing: border-box; }
     body { 
@@ -434,5 +434,5 @@ app.listen({ port: 3001 }, (err) => {
     app.log.error(err);
     process.exit(1);
   }
-  // console.log('Todo App running at http://localhost:3001');
+  console.log('Todo App running at http://localhost:3001');
 });

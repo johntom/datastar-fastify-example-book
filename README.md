@@ -52,7 +52,7 @@ Open http://127.0.0.1 in your browser.
 - **Home** - Welcome page
 - **SQLite Book Manager** - Full CRUD with real-time sync (ported from htmx)
 - **MongoDB Book Manager** - Requires MongoDB connection
-- **Todo App** - Task management example
+- **Todo App** - Task management with real-time syncex using SQLite
 - **Toast** - Notification examples
 - **HelloWorld** - Basic Datastar example
 - **Basic Examples** - Various Datastar patterns
