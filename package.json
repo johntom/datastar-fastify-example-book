@@ -2,11 +2,12 @@
     "name": "datastar-fastify-crud-demo",
     "version": "1.0.0",
     "description": "Form handling with Fastify, Nunjucks and Datastar",
-    "main": "src/server.js",
+     "main": "src/server.js",
     "scripts": {
-        "start": "node src/server.js",
+        "start": "node --watch-path=./src src/server.js",
         "serve": "node src/server.js",
         "dev": "nodemon src/server.js",
+       
         "helloworld": "nodemon src/views/helloworld/helloworld.js",
         "startTodo": "node src/views/helloworld/helloworld.js",
         "startToast": "nodemon src/views/toast.js"
@@ -34,6 +35,7 @@
         "fastify-plugin": "^5.0.1",
         "fastify-sqlite": "^1.1.0",
         "fs-extra": "^11.3.0",
+        "fzstd": "^0.1.1",
         "handlebars": "^4.7.8",
         "lodash": "^4.17.21",
         "nunjucks": "^3.2.4",

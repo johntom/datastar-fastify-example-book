@@ -1,0 +1,28 @@
+{% extends "badapple/layout-badapple.njk" %}
+
+{% block content %}
+
+<div class="badapple-wrapper">
+  <h1>Bad Apple <span class="sdk-badge">SDK</span></h1>
+  <!-- p class="credit"> -->
+  <h2> Using @johntom/datastar-fastify SDK - {{ frameCount }} frames</h2>
+
+  <div data-signals="{_percentage: 0, _contents: 'Press Start to play...', _elapsed: '0:00', _playing: false}">
+    <div class="controls">
+      <button data-show="!$_playing" data-on:click="$_playing = true; @get('/api_view/badapple-sdk/stream')">Start</button>
+      <button data-show="$_playing" data-on:click="$_playing = false; window.stop()">Stop</button>
+      <span class="elapsed" data-text="$_elapsed"></span>
+      <span class="percentage" data-text="`${$_percentage.toFixed(1)}%`"></span>
+      <input type="range" min="0" max="100" step="0.01" disabled data-attr:value="$_percentage" />
+    </div>
+  </div>
+
+  <pre class="frame" data-text="$_contents"></pre>
+
+  <div class="version-links">
+   <!-- <a href="/api_view/badapple">Raw SSE Version</a>-->
+    <span class="active">SDK Version</span>
+  </div>
+</div>
+
+{% endblock %}

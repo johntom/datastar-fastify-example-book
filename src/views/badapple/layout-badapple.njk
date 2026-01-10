@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+
+    <link rel="stylesheet" href="/public/css/badapple.css">
+    <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.7/bundles/datastar.js"></script>
+</head>
+<body>
+    <nav class="badapple-nav">
+        <a href="/">Home</a>
+        <a href="/api_view/location">Location</a>
+        <a href="/api_view/shop">Shop</a>
+        <a href="/api_view/badapple" class="active">Bad Apple</a>
+        <a href="/api_view/todo">Todo</a>
+    </nav>
+    {% block content %}{% endblock %}
+</body>
+</html>

@@ -1,4 +1,124 @@
-'use strict'
+"use strict";
+
+const fs = require('fs');
+const path = require('path');
+const fzstd = require('fzstd');
+
+// Location data for PlacePicker
+const { AVAILABLE_LOCATIONS } = require('../views/location/data/available-locations');
+
+// Bad Apple frame loading
+const badAppleCompressed = fs.readFileSync(path.join(__dirname, '../views/badapple/badapple.zst'));
+const badAppleData = fzstd.decompress(badAppleCompressed);
+const badAppleText = new TextDecoder().decode(badAppleData);
+const rawLines = badAppleText.replace(/\r/g, '').split('\n');
+const FRAME_HEIGHT = 36;
+const badAppleFrames = [];
+
+for (let frameIdx = 0; frameIdx < Math.floor(rawLines.length / FRAME_HEIGHT); frameIdx++) {
+  const frameLines = [];
+  for (let lineIdx = 0; lineIdx < FRAME_HEIGHT; lineIdx++) {
+    const rawLineIdx = frameIdx * FRAME_HEIGHT + lineIdx;
+    const line = rawLines[rawLineIdx] || '';
+    const cleaned = line.replace(/[^\x20-\x7E]/g, '');
+    const frameData = cleaned.slice(-96).padEnd(96, ' ');
+    frameLines.push(frameData);
+  }
+  const frame = frameLines.join('\n');
+  if (frame.trim()) badAppleFrames.push(frame);
+}
+
+// Pre-encode SSE messages
+const badAppleSseFrames = badAppleFrames.map((frame, i) => {
+  const pct = (i / badAppleFrames.length) * 100;
+  const totalSecs = Math.floor(i / 30);
+  const mins = Math.floor(totalSecs / 60);
+  const secs = totalSecs % 60;
+  const elapsed = `${mins}:${secs.toString().padStart(2, '0')}`;
+  return `event: datastar-patch-signals\ndata: signals ${JSON.stringify({ _contents: frame, _percentage: pct, _elapsed: elapsed })}\n\n`;
+});
+console.log(`Bad Apple: ${badAppleFrames.length} frames loaded`);
+
+// Track user's selected "interesting" locations
+const interestingLocationIds = new Set();
+
+function getAvailableLocations() {
+  return AVAILABLE_LOCATIONS.filter(loc => !interestingLocationIds.has(loc.id));
+}
+
+function getInterestingLocations() {
+  return AVAILABLE_LOCATIONS.filter(loc => interestingLocationIds.has(loc.id));
+}
+
+// Shopping Cart data
+const PRODUCTS = [
+  {
+    id: 'p1',
+    title: 'Denim Pioneer Jacket',
+    price: 129.99,
+    image: 'denim-pioneer.jpg',
+    description: 'A rugged yet stylish denim jacket, perfect for the modern adventurer. Features a classic cut with contemporary details.',
+  },
+  {
+    id: 'p2',
+    title: 'Dream Gown',
+    price: 349.99,
+    image: 'dream-gown.jpg',
+    description: 'An ethereal gown that captures the essence of elegance. Perfect for special occasions and unforgettable moments.',
+  },
+  {
+    id: 'p3',
+    title: 'Merlot Suit',
+    price: 459.99,
+    image: 'merlot-suit.jpg',
+    description: 'A sophisticated suit in a rich merlot hue. Tailored to perfection for the discerning gentleman.',
+  },
+  {
+    id: 'p4',
+    title: 'Mocha Overcoat',
+    price: 289.99,
+    image: 'mocha-overcoat.jpg',
+    description: 'A luxurious overcoat in warm mocha tones. The perfect companion for cool evenings and stylish outings.',
+  },
+  {
+    id: 'p5',
+    title: 'Moonlight Dress',
+    price: 199.99,
+    image: 'moonlight-dress.jpg',
+    description: 'A stunning dress that shimmers like moonlight on water. Designed for those who dare to stand out.',
+  },
+  {
+    id: 'p6',
+    title: 'Rain Jacket',
+    price: 149.99,
+    image: 'rain-jacket.jpg',
+    description: 'Stay dry in style with this functional yet fashionable rain jacket. Built for all-weather adventures.',
+  },
+];
+
+// In-memory shopping cart
+const shoppingCart = [];
+
+function getCartTotal() {
+  return shoppingCart.reduce((sum, item) => sum + item.price, 0).toFixed(2);
+}
+
+function renderCartItems() {
+  if (shoppingCart.length === 0) {
+    return '<p class="empty-cart">Your cart is empty</p>';
+  }
+  return shoppingCart.map((item, index) =>
+    `<li id="cart-item-${index}" class="cart-item"><span class="cart-item-title">${item.title}</span><span class="cart-item-price">$${item.price}</span><button class="cart-item-remove" data-on:click="@delete('/api_view/cart/${index}')">x</button></li>`
+  ).join('');
+}
+
+function renderCartSidebar() {
+  const countHtml = `<h2 id="cart-header">Cart <span id="cart-count">${shoppingCart.length > 0 ? `(${shoppingCart.length})` : ''}</span></h2>`;
+  const itemsHtml = `<ul id="cart-items">${renderCartItems()}</ul>`;
+  const totalHtml = shoppingCart.length > 0 ? `<p id="cart-total" class="cart-total">Total: $${getCartTotal()}</p>` : '<p id="cart-total"></p>';
+  return `<aside id="cart-sidebar">${countHtml}${itemsHtml}${totalHtml}</aside>`;
+}
+
 const messages = [
   "Stop overcomplicating it.",
   "Backend controls state.",
@@ -10,26 +130,29 @@ const messages = [
   "https://data-star.dev/ 🚀",
 ];
 
-const getRandomMessage = () => messages[Math.floor(Math.random() * messages.length)];
+const getRandomMessage = () =>
+  messages[Math.floor(Math.random() * messages.length)];
 
 // Helper functions for rendering todos
 function escapeHtml(text) {
   const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
   };
-  return text.replace(/[&<>"']/g, m => map[m]);
+  return text.replace(/[&<>"']/g, (m) => map[m]);
 }
 
 function renderTodoItem(todo) {
   return `
-    <li id="todo-${todo.id}" class="todo-item ${todo.completed ? 'completed' : ''}">
+    <li id="todo-${todo.id}" class="todo-item ${
+    todo.completed ? "completed" : ""
+  }">
       <input
         type="checkbox"
-        ${todo.completed ? 'checked' : ''}
+        ${todo.completed ? "checked" : ""}
         data-on:change="@post('/api/todosapp/${todo.id}/toggle')"
       />
       <span class="todo-text">${escapeHtml(todo.text)}</span>
@@ -41,50 +164,54 @@ function renderTodoItem(todo) {
   `;
 }
 
-function renderTodoList(todos, filter = 'all') {
+function renderTodoList(todos, filter = "all") {
   let filtered = Array.from(todos.values());
 
-  if (filter === 'active') {
-    filtered = filtered.filter(t => !t.completed);
-  } else if (filter === 'completed') {
-    filtered = filtered.filter(t => t.completed);
+  if (filter === "active") {
+    filtered = filtered.filter((t) => !t.completed);
+  } else if (filter === "completed") {
+    filtered = filtered.filter((t) => t.completed);
   }
 
   if (filtered.length === 0) {
     return '<li id="empty-state" class="empty">No todos yet!</li>';
   }
 
-  return filtered.map(renderTodoItem).join('');
+  return filtered.map(renderTodoItem).join("");
 }
 
 function renderFooter(todos, activeFilter) {
   const total = todos.size;
-  const active = Array.from(todos.values()).filter(t => !t.completed).length;
+  const active = Array.from(todos.values()).filter((t) => !t.completed).length;
   const completed = total - active;
 
   return `
     <footer id="todo-footer" class="footer">
-      <span class="count">${active} item${active !== 1 ? 's' : ''} left</span>
+      <span class="count">${active} item${active !== 1 ? "s" : ""} left</span>
       <div class="filters">
         <button
-          class="${activeFilter === 'all' ? 'active' : ''}"
+          class="${activeFilter === "all" ? "active" : ""}"
           data-on:click="@post('/api/todosapp/filter/all')"
         >All</button>
         <button
-          class="${activeFilter === 'active' ? 'active' : ''}"
+          class="${activeFilter === "active" ? "active" : ""}"
           data-on:click="@post('/api/todosapp/filter/active')"
         >Active</button>
         <button
-          class="${activeFilter === 'completed' ? 'active' : ''}"
+          class="${activeFilter === "completed" ? "active" : ""}"
           data-on:click="@post('/api/todosapp/filter/completed')"
         >Completed</button>
       </div>
-      ${completed > 0 ? `
+      ${
+        completed > 0
+          ? `
         <button
           class="clear-completed"
           data-on:click="@post('/api/todosapp/clear-completed')"
         >Clear completed (${completed})</button>
-      ` : ''}
+      `
+          : ""
+      }
     </footer>
   `;
 }
@@ -92,212 +219,200 @@ function renderFooter(todos, activeFilter) {
 module.exports = async function (fastify, opts) {
   // Minify HTML output
   const minifyHtml = (payload) => {
-    if (typeof payload === 'string') {
+    if (typeof payload === "string") {
       return htmlMinifier.minify(payload, {
         removeComments: true,
         collapseWhitespace: true,
         minifyJS: true,
-        minifyCSS: true
-      })
+        minifyCSS: true,
+      });
     }
-    return payload
-  }
- fastify.get('/toast', async (request, reply) => {
+    return payload;
+  };
+  fastify.get("/toast", async (request, reply) => {
     const data = {
-      title: 'toast Form',
-      formAction: 'toast',
-      csrfToken: generateCsrfToken(request)
-    }
-    const csrfToken = data.csrfToken
+      title: "toast Form",
+      formAction: "toast",
+      csrfToken: generateCsrfToken(request),
+    };
+    const csrfToken = data.csrfToken;
     //   co
- await reply.view('./toast/toast.njk', data)
+    await reply.view("./toast/toast.njk", data);
+  });
+  // const messages = [
+  fastify.get("/helloworld", async (request, reply) => {
+    const data = {
+      title: "helloworld example",
+      formAction: "helloworld",
+      csrfToken: generateCsrfToken(request),
+    };
+    const csrfToken = data.csrfToken;
+    //     //   co
+    await reply.view("./helloworld/helloworld.njk", data);
+  });
 
-  })
-// const messages = [
-   fastify.get('/helloworld', async (request, reply) => {
-     const data = {
-       title: 'helloworld example',
-       formAction: 'helloworld',
-       csrfToken: generateCsrfToken(request)
-     }
-     const csrfToken = data.csrfToken
-//     //   co
-  await reply.view('./helloworld/helloworld.njk', data)
-
-  })
-
-  fastify.get('/basic', async (request, reply) => {
+  fastify.get("/basic", async (request, reply) => {
     try {
       // Fetch tasks from the API
-      let tasksResponse = await fastify.inject({
-        method: 'get',
-        url: `/api/tasks`
-      }).then((res) => res.json());
+      let tasksResponse = await fastify
+        .inject({
+          method: "get",
+          url: `/api/tasks`,
+        })
+        .then((res) => res.json());
 
-      const tasksHtml = tasksResponse.tasksHtml || '';
+      const tasksHtml = tasksResponse.tasksHtml || "";
 
       const data = {
-        title: 'Basic Examples',
-        formAction: 'basic',
+        title: "Basic Examples",
+        formAction: "basic",
         csrfToken: generateCsrfToken(request),
-        initialTasksHtml: tasksHtml
-      }
+        initialTasksHtml: tasksHtml,
+      };
 
-      await reply.view('./basic/basic.njk', data)
+      await reply.view("./basic/basic.njk", data);
     } catch (error) {
       fastify.log.error(error);
-      return reply.status(500).send({ error: 'Failed to load basic examples' });
+      return reply.status(500).send({ error: "Failed to load basic examples" });
     }
-  })
+  });
 
-  fastify.get('/todo', async (request, reply) => {
+  fastify.get("/todo", async (request, reply) => {
     try {
       // Fetch todos from the API
-      let todosResponse = await fastify.inject({
-        method: 'get',
-        url: `/api/todosapp`
-      }).then((res) => res.json());
+      let todosResponse = await fastify
+        .inject({
+          method: "get",
+          url: `/api/todosapp`,
+        })
+        .then((res) => res.json());
 
       const todosArray = todosResponse.todos || [];
 
       // Convert array to Map for rendering functions
       const todosMap = new Map();
-      todosArray.forEach(todo => {
+      todosArray.forEach((todo) => {
         todosMap.set(todo.id, todo);
       });
 
       // Render initial HTML
-      const initialTodoList = renderTodoList(todosMap, 'all');
-      const initialFooter = renderFooter(todosMap, 'all');
+      const initialTodoList = renderTodoList(todosMap, "all");
+      const initialFooter = renderFooter(todosMap, "all");
 
       const data = {
-        title: 'Todo App',
-        formAction: 'todo',
+        title: "Todo App",
+        formAction: "todo",
         csrfToken: generateCsrfToken(request),
         initialTodoList: initialTodoList,
-        initialFooter: initialFooter
-      }
+        initialFooter: initialFooter,
+      };
 
-      await reply.view('./todo/todo.njk', data)
+      await reply.view("./todo/todo.njk", data);
     } catch (error) {
       fastify.log.error(error);
-      return reply.status(500).send({ error: 'Failed to load todos' });
+      return reply.status(500).send({ error: "Failed to load todos" });
     }
-  })
+  });
 
+  //   fastify.get('/froi', async (request, reply) => {
+  //     const data = {
+  //       title: 'Froi Form',
+  //       formAction: 'froi',
+  //       csrfToken: generateCsrfToken(request)
+  //     }
+  //     const csrfToken = data.csrfToken
+  //     //   co
+  //  await reply.view('./froi/froi.njk', data)
 
+  //   })
 
+  //   fastify.get('/uploader', async (request, reply) => {
+  //     const data = {
+  //       title: 'Froi Form',
+  //       formAction: 'froi',
+  //       csrfToken: generateCsrfToken(request)
+  //     }
+  //     const csrfToken = data.csrfToken
+  //     //   co
+  //  await reply.view('./uploader/uploader.njk', data)
 
-//   fastify.get('/froi', async (request, reply) => {
-//     const data = {
-//       title: 'Froi Form',
-//       formAction: 'froi',
-//       csrfToken: generateCsrfToken(request)
-//     }
-//     const csrfToken = data.csrfToken
-//     //   co
-//  await reply.view('./froi/froi.njk', data)
-
-//   })
-
-
-
-
-
-
-
-//   fastify.get('/uploader', async (request, reply) => {
-//     const data = {
-//       title: 'Froi Form',
-//       formAction: 'froi',
-//       csrfToken: generateCsrfToken(request)
-//     }
-//     const csrfToken = data.csrfToken
-//     //   co
-//  await reply.view('./uploader/uploader.njk', data)
-
-//   })
-
+  //   })
 
   fastify.post("/submitbook", async (request, reply) => {
-    console.log('in /submitbook', request.body);
+    console.log("in /submitbook", request.body);
     //.a1_Employer_Name.value)
     const book = {
       author: request.body.author,
       title: request.body.title,
-      name: request.body.name
+      name: request.body.name,
     };
-    console.log(book.author, book.title, book.name)
+    console.log(book.author, book.title, book.name);
     // console.log(book.addr)
+  });
+  fastify.post("/foo", async (request, reply) => {
+    console.log("in /foo", request.body);
+    reply.send("");
+  });
 
-  })
-    fastify.post("/foo", async (request, reply) => {
-      console.log('in /foo', request.body);
-      reply.send( '' ) 
-    })
- 
+  fastify.post("/validate-email", async (request, reply) => {
+    const { email } = request.body;
 
+    // Basic validation - if empty, don't show error yet
+    if (!email || email.trim() === "") {
+      return "";
+    }
 
-   
-    fastify.post('/validate-email', async (request, reply) => {
-      const { email } = request.body
+    // Validate email
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const isValid = emailRegex.test(email);
 
-      // Basic validation - if empty, don't show error yet
-      if (!email || email.trim() === '') {
-        return ''
-      }
+    if (!isValid) {
+      return '<div class="validation-message invalid">Please enter a valid email address</div>';
+    }
 
-      // Validate email
-      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-      const isValid = emailRegex.test(email)
+    return '<div class="validation-message valid">Email looks good!</div>';
+  });
 
-      if (!isValid) {
-        return '<div class="validation-message invalid">Please enter a valid email address</div>'
-      }
+  // Simple CSRF protection
+  function generateCsrfToken(request) {
+    const token =
+      Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15);
 
-      return '<div class="validation-message valid">Email looks good!</div>'
-    })
+    if (!request.session) {
+      request.session = {};
+    }
 
- 
-// Simple CSRF protection
-function generateCsrfToken(request) {
-  const token = Math.random().toString(36).substring(2, 15) +
-    Math.random().toString(36).substring(2, 15)
-
-  if (!request.session) {
-    request.session = {}
+    request.session.csrfToken = token;
+    return token;
   }
 
-  request.session.csrfToken = token
-  return token
-}
+  function validateCsrfToken(request) {
+    if (!request.session || !request.session.csrfToken) {
+      return false;
+    }
 
-function validateCsrfToken(request) {
-  if (!request.session || !request.session.csrfToken) {
-    return false
+    return request.body.csrfToken === request.session.csrfToken;
   }
-
-  return request.body.csrfToken === request.session.csrfToken
-}
 
   // Test endpoint to verify Datastar SSE is working
-  fastify.get('/test-sse', async (req, reply) => {
+  fastify.get("/test-sse", async (req, reply) => {
     try {
-      console.log('Test SSE endpoint hit');
+      console.log("Test SSE endpoint hit");
       const testHtml = '<div class="alert alert-success">SSE is working!</div>';
 
       await reply.datastar(async (sse) => {
-        console.log('Inside test SSE handler');
+        console.log("Inside test SSE handler");
         sse.patchElements(testHtml, {
           selector: "#book-list",
-          mode: "prepend"
+          mode: "prepend",
         });
-        console.log('Test SSE patchElements called');
+        console.log("Test SSE patchElements called");
       });
 
-      console.log('Test SSE response sent');
+      console.log("Test SSE response sent");
     } catch (error) {
-      console.error('Error in test-sse:', error);
+      console.error("Error in test-sse:", error);
       return reply.status(500).send({ error: error.message });
     }
   });
@@ -306,85 +421,92 @@ function validateCsrfToken(request) {
   let books = []; // In-memory books array for this session
   const BOOKS_PER_PAGE = 10; // Number of books to load per page
 
- fastify.get('/book', async (request, reply) => {
+  fastify.get("/book", async (request, reply) => {
     try {
       // Fetch books from the API
-      let booksResponse = await fastify.inject({
-        method: 'get',
-        url: `/api/todo/book`
-      }).then((res) => res.json());
+      let booksResponse = await fastify
+        .inject({
+          method: "get",
+          url: `/api/todo/book`,
+        })
+        .then((res) => res.json());
 
       books = booksResponse.data || [];
       const newbooks = books;
 
       // Create additional data for the view
       const arry = [];
-      arry.push({ "val": 'test1' });
-      arry.push({ "val": 'test2' });
+      arry.push({ val: "test1" });
+      arry.push({ val: "test2" });
 
-      const title = 'Book Recommendations ';
+      const title = "Book Recommendations ";
       const starcounter = 9;
 
       // return reply.view('mongobook\mongobook.njk', {
-      await reply.view('./mongobook/mainbook.njk', {
+      await reply.view("./mongobook/mainbook.njk", {
         title: title,
-        hello: 'Datastar/Fastify/Mongodon/Nunjucks in action',
+        hello: "Datastar/Fastify/Mongodon/Nunjucks in action",
         books: books,
         starcounter: starcounter,
         arry: arry,
-        newbooks: newbooks
+        newbooks: newbooks,
       });
     } catch (error) {
       fastify.log.error(error);
-      return reply.status(500).send({ error: 'Failed to load books' });
+      return reply.status(500).send({ error: "Failed to load books" });
     }
   });
-  fastify.get('/book_infinate', async (request, reply) => {
+  fastify.get("/book_infinate", async (request, reply) => {
     try {
       // Fetch initial books from the API (first page only)
-      let booksResponse = await fastify.inject({
-        method: 'get',
-        url: `/api/todo/book?limit=${BOOKS_PER_PAGE}`
-      }).then((res) => res.json());
+      let booksResponse = await fastify
+        .inject({
+          method: "get",
+          url: `/api/todo/book?limit=${BOOKS_PER_PAGE}`,
+        })
+        .then((res) => res.json());
 
       books = booksResponse.data || [];
       const newbooks = books.slice(0, BOOKS_PER_PAGE); // Only show first page initially
 
       // Create additional data for the view
       const arry = [];
-      arry.push({ "val": 'test1' });
-      arry.push({ "val": 'test2' });
+      arry.push({ val: "test1" });
+      arry.push({ val: "test2" });
 
-      const title = 'Book Recommendations v124';
+      const title = "Book Recommendations v124";
       const starcounter = 9;
 
       // Calculate if there are more books to load
-      const totalBooksResponse = await fastify.inject({
-        method: 'get',
-        url: `/api/todo/book`
-      }).then((res) => res.json());
+      const totalBooksResponse = await fastify
+        .inject({
+          method: "get",
+          url: `/api/todo/book`,
+        })
+        .then((res) => res.json());
 
       const totalBooks = totalBooksResponse.data?.length || 0;
       const hasMoreBooks = totalBooks > BOOKS_PER_PAGE;
 
-    await reply.view('./mongobook/mainbook_infinite.njk', {
+      await reply.view("./mongobook/mainbook_infinite.njk", {
         title: title,
-        hello: 'Htmx/Fastify/Mongodon/Nunjucks in action - Not tested Infinite Scroll Enabled',
+        hello:
+          "Htmx/Fastify/Mongodon/Nunjucks in action - Not tested Infinite Scroll Enabled",
         books: newbooks, // Only first page
         starcounter: starcounter,
         arry: arry,
         newbooks: newbooks,
         hasMoreBooks: hasMoreBooks,
-        totalBooks: totalBooks
+        totalBooks: totalBooks,
       });
     } catch (error) {
       fastify.log.error(error);
-      return reply.status(500).send({ error: 'Failed to load books' });
+      return reply.status(500).send({ error: "Failed to load books" });
     }
   });
 
   // Load more books for infinite scroll
-  fastify.get('/load-more-books', async (request, reply) => {
+  fastify.get("/load-more-books", async (request, reply) => {
     try {
       const page = parseInt(request.query.page) || 1;
       const nextPage = page + 1;
@@ -392,10 +514,14 @@ function validateCsrfToken(request) {
       console.log(`Loading more books - page ${nextPage}`);
 
       // Fetch the next page of books
-      let booksResponse = await fastify.inject({
-        method: 'get',
-        url: `/api/todo/book?limit=${BOOKS_PER_PAGE}&skip=${page * BOOKS_PER_PAGE}`
-      }).then((res) => res.json());
+      let booksResponse = await fastify
+        .inject({
+          method: "get",
+          url: `/api/todo/book?limit=${BOOKS_PER_PAGE}&skip=${
+            page * BOOKS_PER_PAGE
+          }`,
+        })
+        .then((res) => res.json());
 
       const newBooks = booksResponse.data || [];
       const hasMore = newBooks.length === BOOKS_PER_PAGE;
@@ -403,7 +529,9 @@ function validateCsrfToken(request) {
       console.log(`Loaded ${newBooks.length} books, hasMore: ${hasMore}`);
 
       // Generate HTML for new book rows
-      const bookRows = newBooks.map(book => `
+      const bookRows = newBooks
+        .map(
+          (book) => `
         <tr id="book-${book._id}" data-book-id="${book._id}">
           <td>${book._id}</td>
           <td>${book.id}</td>
@@ -436,91 +564,98 @@ function validateCsrfToken(request) {
             <button class="btn btn-danger btn-sm" data-on:click="if(confirm('Are you sure you wish to delete this book?')){@delete('/api_view/delete/${book._id}')}">Delete</button>
           </td>
         </tr>
-      `).join('');
+      `
+        )
+        .join("");
 
       // Use Datastar SSE to append books and update signals
       await reply.datastar(async (sse) => {
         if (newBooks.length > 0) {
           sse.patchElements(bookRows, {
             selector: "#book-list",
-            mode: "append"
+            mode: "append",
           });
         }
 
         sse.patchSignals({
           page: nextPage,
           hasMore: hasMore,
-          loading: false
+          loading: false,
         });
 
         console.log(`Updated page to ${nextPage}, hasMore: ${hasMore}`);
       });
     } catch (error) {
-      fastify.log.error('Error loading more books:', error);
+      fastify.log.error("Error loading more books:", error);
       await reply.datastar(async (sse) => {
         sse.patchSignals({ loading: false });
       });
-      return reply.status(500).send({ error: 'Failed to load more books' });
+      return reply.status(500).send({ error: "Failed to load more books" });
     }
   });
 
   // Submit new book - Datastar version
   fastify.post("/submit", async (req, reply) => {
     try {
-      console.log('=== SUBMIT NEW BOOK CALLED ===');
-      console.log('Submit request body:', JSON.stringify(req.body, null, 2));
+      console.log("=== SUBMIT NEW BOOK CALLED ===");
+      console.log("Submit request body:", JSON.stringify(req.body, null, 2));
 
       // Handle all variations of field names from Datastar
       const title = req.body.title || req.body.newtitle || req.body.newTitle;
-      const author = req.body.author || req.body.newauthor || req.body.newAuthor;
+      const author =
+        req.body.author || req.body.newauthor || req.body.newAuthor;
 
-      console.log('✅ Extracted values:');
-      console.log('   title:', title);
-      console.log('   author:', author);
+      console.log("✅ Extracted values:");
+      console.log("   title:", title);
+      console.log("   author:", author);
 
       const book = {
         name: title,
         author: author,
       };
 
-      if (!book.name || book.name === '') {
-        console.error('❌ Book name is required');
-        return reply.status(400).send({ error: 'Book name is required' });
+      if (!book.name || book.name === "") {
+        console.error("❌ Book name is required");
+        return reply.status(400).send({ error: "Book name is required" });
       }
 
-      let highrec = await fastify.inject({
-        method: 'get',
-        url: `/api/todo/book?orderBy={"_id":-1}&limit=1`
-      }).then((res) => res.json());
+      let highrec = await fastify
+        .inject({
+          method: "get",
+          url: `/api/todo/book?orderBy={"_id":-1}&limit=1`,
+        })
+        .then((res) => res.json());
 
-      console.log('Highest record:', highrec);
+      console.log("Highest record:", highrec);
 
       if (!highrec || !highrec.data || !highrec.data[0]) {
         // No books exist yet, start with id 1
         book.id = 1;
       } else {
         highrec = highrec.data[0];
-        let newid = (highrec.id * 1) + 1;
+        let newid = highrec.id * 1 + 1;
         book.id = newid * 1;
       }
 
-      let headobj = { 'Content-Type': `application/json` };
+      let headobj = { "Content-Type": `application/json` };
 
-      await fastify.inject({
-        method: 'post',
-        headers: headobj,
-        payload: book,
-        url: `/api/todo/book`
-      }).then(async (x) => {
-        let aa = JSON.parse(x.payload);
-        let _id = aa._id;
+      await fastify
+        .inject({
+          method: "post",
+          headers: headobj,
+          payload: book,
+          url: `/api/todo/book`,
+        })
+        .then(async (x) => {
+          let aa = JSON.parse(x.payload);
+          let _id = aa._id;
 
-        book._id = _id;
-        books.push(book);
+          book._id = _id;
+          books.push(book);
 
-        console.log('Book created:', book);
+          console.log("Book created:", book);
 
-        const bookRow = `<tr id="book-${book._id}" data-book-id="${book._id}">
+          const bookRow = `<tr id="book-${book._id}" data-book-id="${book._id}">
 <td>${book._id}</td>
 <td>${book.id}</td>
 <td>${book.name}</td>
@@ -553,14 +688,14 @@ function validateCsrfToken(request) {
 </td>
 </tr>`;
 
-        await reply.datastar(async (sse) => {
-          console.log('📤 Sending SSE response with new book row');
-          sse.patchElements(bookRow, {
-            selector: "#book-list",
-            mode: "append"
-          });
-          // Execute script to close modal and reset signals
-          sse.executeScript(`
+          await reply.datastar(async (sse) => {
+            console.log("📤 Sending SSE response with new book row");
+            sse.patchElements(bookRow, {
+              selector: "#book-list",
+              mode: "append",
+            });
+            // Execute script to close modal and reset signals
+            sse.executeScript(`
             console.log('✅ Book added successfully, closing modal...');
             $newTitle = '';
             $newAuthor = '';
@@ -568,43 +703,47 @@ function validateCsrfToken(request) {
             const modal = bootstrap.Modal.getInstance(modalEl);
             if(modal) modal.hide();
           `);
-          console.log('✅ SSE response sent successfully');
+            console.log("✅ SSE response sent successfully");
+          });
         });
-      });
     } catch (error) {
-      console.error('Error in submit:', error);
-      return reply.status(500).send({ error: 'Failed to create book' });
+      console.error("Error in submit:", error);
+      return reply.status(500).send({ error: "Failed to create book" });
     }
   });
 
   // Get edit form for a book - Datastar version
-  fastify.get('/get-edit-form/:id', async (req, reply) => {
+  fastify.get("/get-edit-form/:id", async (req, reply) => {
     const { id } = req.params;
-    console.log('=== GET-EDIT-FORM CALLED ===');
-    console.log('Request ID:', id);
-    console.log('Request headers:', req.headers);
+    console.log("=== GET-EDIT-FORM CALLED ===");
+    console.log("Request ID:", id);
+    console.log("Request headers:", req.headers);
 
     try {
-      let response = await fastify.inject({
-        method: 'get',
-        url: `/api/todo/book/${id}`
-      }).then((res) => res.json());
+      let response = await fastify
+        .inject({
+          method: "get",
+          url: `/api/todo/book/${id}`,
+        })
+        .then((res) => res.json());
 
-      console.log('Book API response:', JSON.stringify(response, null, 2));
+      console.log("Book API response:", JSON.stringify(response, null, 2));
 
       if (!response || !response.data) {
-        console.error('❌ Book not found:', id);
-        return reply.status(404).send({ error: 'Book not found' });
+        console.error("❌ Book not found:", id);
+        return reply.status(404).send({ error: "Book not found" });
       }
 
       const book = response.data;
-      console.log('✅ Book found:', book);
+      console.log("✅ Book found:", book);
 
       // Escape values and wrap in quotes for JavaScript string literals
       // data-signals expects JavaScript expressions, so "data-signals:x='value'" becomes invalid JS
       // Instead use: data-signals:x="'value'" which evaluates to the string 'value'
-      const editTitle = (book.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-      const editAuthor = (book.author || '').replace(/'/g, "\\'");
+      const editTitle = (book.name || "")
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'");
+      const editAuthor = (book.author || "").replace(/'/g, "\\'");
 
       const editForm = `<tr id="book-${book._id}" class="editing" data-signals:editTitle="'${editTitle}'" data-signals:editAuthor="'${editAuthor}'">
     <td>${book._id}</td>
@@ -621,48 +760,57 @@ function validateCsrfToken(request) {
     </td>
   </tr>`;
 
-      console.log('📝 Selector:', `#book-${book._id}`);
-      console.log('📝 Edit form HTML length:', editForm.length);
-      console.log('📝 First 300 chars:', editForm.substring(0, 300));
-      console.log('📝 Check data-signals (should be wrapped in quotes):', editForm.match(/data-signals:[^>]+/g));
-      console.log('📝 editTitle value:', `'${editTitle}'`);
-      console.log('📝 editAuthor value:', `'${editAuthor}'`);
+      console.log("📝 Selector:", `#book-${book._id}`);
+      console.log("📝 Edit form HTML length:", editForm.length);
+      console.log("📝 First 300 chars:", editForm.substring(0, 300));
+      console.log(
+        "📝 Check data-signals (should be wrapped in quotes):",
+        editForm.match(/data-signals:[^>]+/g)
+      );
+      console.log("📝 editTitle value:", `'${editTitle}'`);
+      console.log("📝 editAuthor value:", `'${editAuthor}'`);
 
       await reply.datastar(async (sse) => {
-        console.log('🔄 Inside datastar SSE handler');
-        console.log('🎯 Attempting to patch selector:', `#book-${book._id}`);
+        console.log("🔄 Inside datastar SSE handler");
+        console.log("🎯 Attempting to patch selector:", `#book-${book._id}`);
 
         // Use "outer" mode (not "outerHTML") - replaces the entire element
         sse.patchElements(editForm, {
           selector: `#book-${book._id}`,
-          mode: "outer"
+          mode: "outer",
         });
-        console.log('✅ patchElements called with "outer" mode (replaces outerHTML)');
+        console.log(
+          '✅ patchElements called with "outer" mode (replaces outerHTML)'
+        );
       });
 
-      console.log('✅ Edit form SSE response sent successfully');
+      console.log("✅ Edit form SSE response sent successfully");
     } catch (error) {
-      console.error('❌ Error in get-edit-form:', error);
-      console.error('Error stack:', error.stack);
-      return reply.status(500).send({ error: 'Failed to load book for editing' });
+      console.error("❌ Error in get-edit-form:", error);
+      console.error("Error stack:", error.stack);
+      return reply
+        .status(500)
+        .send({ error: "Failed to load book for editing" });
     }
   });
 
   // Cancel edit - Datastar version
-  fastify.get('/cancel-edit/:id', async (req, reply) => {
+  fastify.get("/cancel-edit/:id", async (req, reply) => {
     const { id } = req.params;
 
     try {
-      let response = await fastify.inject({
-        method: 'get',
-        url: `/api/todo/book/${id}`
-      }).then((res) => res.json());
+      let response = await fastify
+        .inject({
+          method: "get",
+          url: `/api/todo/book/${id}`,
+        })
+        .then((res) => res.json());
 
-      console.log('cancel-edit response:', response);
+      console.log("cancel-edit response:", response);
 
       if (!response || !response.data) {
-        console.error('Book not found:', id);
-        return reply.status(404).send({ error: 'Book not found' });
+        console.error("Book not found:", id);
+        return reply.status(404).send({ error: "Book not found" });
       }
 
       const book = response.data;
@@ -701,34 +849,35 @@ function validateCsrfToken(request) {
       await reply.datastar(async (sse) => {
         sse.patchElements(bookRow, {
           selector: `#book-${book._id}`,
-          mode: "outer"
+          mode: "outer",
         });
       });
     } catch (error) {
-      console.error('Error in cancel-edit:', error);
-      return reply.status(500).send({ error: 'Failed to cancel edit' });
+      console.error("Error in cancel-edit:", error);
+      return reply.status(500).send({ error: "Failed to cancel edit" });
     }
   });
 
   // Update book - Datastar version
-  fastify.put('/update/:id/:bookid', async (req, reply) => {
+  fastify.put("/update/:id/:bookid", async (req, reply) => {
     const { id, bookid } = req.params;
 
     try {
-      console.log('=== UPDATE BOOK CALLED ===');
-      console.log('Update request body:', JSON.stringify(req.body, null, 2));
-      console.log('Request headers:', req.headers['content-type']);
+      console.log("=== UPDATE BOOK CALLED ===");
+      console.log("Update request body:", JSON.stringify(req.body, null, 2));
+      console.log("Request headers:", req.headers["content-type"]);
 
       // Datastar sends field names in lowercase! Check all variations
       const title = req.body.editTitle || req.body.edittitle || req.body.title;
-      const author = req.body.editAuthor || req.body.editauthor || req.body.author;
+      const author =
+        req.body.editAuthor || req.body.editauthor || req.body.author;
 
-      console.log('✅ Extracted values:');
-      console.log('   title:', title);
-      console.log('   author:', author);
+      console.log("✅ Extracted values:");
+      console.log("   title:", title);
+      console.log("   author:", author);
 
       if (!title || !author) {
-        console.error('❌ Missing title or author:', { title, author });
+        console.error("❌ Missing title or author:", { title, author });
       }
 
       let book = {
@@ -738,41 +887,51 @@ function validateCsrfToken(request) {
         author: author,
       };
 
-      console.log('Updating book with values:', book);
+      console.log("Updating book with values:", book);
 
-      await fastify.inject({
-        method: 'put',
-        body: book,
-        url: `/api/todo/book`
-      }).then((x) => {
-        let uprec = JSON.parse(x.payload);
-        console.log('Update response:', uprec);
-      });
+      await fastify
+        .inject({
+          method: "put",
+          body: book,
+          url: `/api/todo/book`,
+        })
+        .then((x) => {
+          let uprec = JSON.parse(x.payload);
+          console.log("Update response:", uprec);
+        });
 
-      console.log('📝 Creating bookRow HTML with:');
-      console.log('   book.name:', book.name, '(type:', typeof book.name, ')');
-      console.log('   book.author:', book.author, '(type:', typeof book.author, ')');
+      console.log("📝 Creating bookRow HTML with:");
+      console.log("   book.name:", book.name, "(type:", typeof book.name, ")");
+      console.log(
+        "   book.author:",
+        book.author,
+        "(type:",
+        typeof book.author,
+        ")"
+      );
 
       // If values are undefined, fetch fresh data from DB
       if (!book.name || !book.author) {
-        console.log('⚠️ Values are missing! Fetching fresh data from DB...');
-        const freshData = await fastify.inject({
-          method: 'get',
-          url: `/api/todo/book/${id}`
-        }).then((res) => res.json());
+        console.log("⚠️ Values are missing! Fetching fresh data from DB...");
+        const freshData = await fastify
+          .inject({
+            method: "get",
+            url: `/api/todo/book/${id}`,
+          })
+          .then((res) => res.json());
 
         if (freshData && freshData.data) {
           book.name = freshData.data.name;
           book.author = freshData.data.author;
-          console.log('✅ Fetched fresh values:', book.name, book.author);
+          console.log("✅ Fetched fresh values:", book.name, book.author);
         }
       }
 
       const bookRow = `<tr id="book-${book._id}" data-book-id="${book._id}">
         <td>${book._id}</td>
         <td>${book.id}</td>
-        <td>${book.name || 'N/A'}</td>
-        <td>${book.author || 'N/A'}</td>
+        <td>${book.name || "N/A"}</td>
+        <td>${book.author || "N/A"}</td>
         <td>
           <button class="btn btn-primary btn-sm"
             data-on:click="
@@ -795,63 +954,85 @@ function validateCsrfToken(request) {
             data-on:click="@get('/api_view/load-edit-modal/${book._id}')">
             Edit Popup
           </button>
-          <button class="btn btn-danger btn-sm" data-on:click="if(confirm('Are you sure you wish to delete this book?')){@delete('/api_view/delete/${book._id}')}">Delete</button>
+          <button class="btn btn-danger btn-sm" data-on:click="if(confirm('Are you sure you wish to delete this book?')){@delete('/api_view/delete/${
+            book._id
+          }')}">Delete</button>
         </td>
       </tr>`;
 
-      console.log('📤 Sending bookRow HTML (first 200 chars):', bookRow.substring(0, 200));
+      console.log(
+        "📤 Sending bookRow HTML (first 200 chars):",
+        bookRow.substring(0, 200)
+      );
 
       await reply.datastar(async (sse) => {
         sse.patchElements(bookRow, {
           selector: `#book-${book._id}`,
-          mode: "outer"
+          mode: "outer",
         });
         // Reset editing state
-        sse.patchSignals({ editingId: '' });
+        sse.patchSignals({ editingId: "" });
       });
 
-      console.log('✅ Update complete!');
+      console.log("✅ Update complete!");
     } catch (error) {
-      console.error('Error in update:', error);
-      return reply.status(500).send({ error: 'Failed to update book' });
+      console.error("Error in update:", error);
+      return reply.status(500).send({ error: "Failed to update book" });
     }
   });
 
   // Load book data into edit modal - Datastar version
-  fastify.get('/load-edit-modal/:id', async (req, reply) => {
+  fastify.get("/load-edit-modal/:id", async (req, reply) => {
     const { id } = req.params;
-    console.log('=== LOAD-EDIT-MODAL CALLED ===');
-    console.log('Book ID:', id);
+    console.log("=== LOAD-EDIT-MODAL CALLED ===");
+    console.log("Book ID:", id);
 
     try {
-      let response = await fastify.inject({
-        method: 'get',
-        url: `/api/todo/book/${id}`
-      }).then((res) => res.json());
+      let response = await fastify
+        .inject({
+          method: "get",
+          url: `/api/todo/book/${id}`,
+        })
+        .then((res) => res.json());
 
-      console.log('Book API response:', JSON.stringify(response, null, 2));
+      console.log("Book API response:", JSON.stringify(response, null, 2));
 
       if (!response || !response.data) {
-        console.error('❌ Book not found:', id);
-        return reply.status(404).send({ error: 'Book not found' });
+        console.error("❌ Book not found:", id);
+        return reply.status(404).send({ error: "Book not found" });
       }
 
       const book = response.data;
-      console.log('✅ Book found for modal:', book);
+      console.log("✅ Book found for modal:", book);
 
       await reply.datastar(async (sse) => {
-        console.log('📤 Setting modal signals and opening modal');
-        console.log('Book data:', { _id: book._id, id: book.id, name: book.name, author: book.author });
+        console.log("📤 Setting modal signals and opening modal");
+        console.log("Book data:", {
+          _id: book._id,
+          id: book.id,
+          name: book.name,
+          author: book.author,
+        });
 
         // Escape values for HTML
-        const escapedTitleHTML = (book.name || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        const escapedAuthorHTML = (book.author || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const escapedTitleHTML = (book.name || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+        const escapedAuthorHTML = (book.author || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
 
         sse.patchSignals({
           editModalId: book._id,
           editModalBookId: book.id,
-          editModalTitle: book.name || '',
-          editModalAuthor: book.author || ''
+          editModalTitle: book.name || "",
+          editModalAuthor: book.author || "",
         });
 
         // Patch the form with pre-filled values using patchElements
@@ -885,38 +1066,52 @@ function validateCsrfToken(request) {
           </form>`;
 
         sse.patchElements(formHtml, {
-          selector: '#editBookForm',
-          mode: 'outer'
+          selector: "#editBookForm",
+          mode: "outer",
         });
 
-        console.log('✅ Form patched with values - Bootstrap will handle modal opening');
+        console.log(
+          "✅ Form patched with values - Bootstrap will handle modal opening"
+        );
       });
     } catch (error) {
-      console.error('❌ Error in load-edit-modal:', error);
-      console.error('Error stack:', error.stack);
-      return reply.status(500).send({ error: 'Failed to load book for editing' });
+      console.error("❌ Error in load-edit-modal:", error);
+      console.error("Error stack:", error.stack);
+      return reply
+        .status(500)
+        .send({ error: "Failed to load book for editing" });
     }
   });
 
   // Update book from modal - Datastar version
-  fastify.put('/update-modal/:id/:bookid', async (req, reply) => {
+  fastify.put("/update-modal/:id/:bookid", async (req, reply) => {
     const { id, bookid } = req.params;
 
     try {
-      console.log('=== UPDATE-MODAL BOOK CALLED ===');
-      console.log('Update request body:', JSON.stringify(req.body, null, 2));
-      console.log('Request headers:', req.headers['content-type']);
+      console.log("=== UPDATE-MODAL BOOK CALLED ===");
+      console.log("Update request body:", JSON.stringify(req.body, null, 2));
+      console.log("Request headers:", req.headers["content-type"]);
 
-      const title = req.body.editTitle || req.body.editModalTitle || req.body.edittitle || req.body.title;
-      const author = req.body.editAuthor || req.body.editModalAuthor || req.body.editauthor || req.body.author;
+      const title =
+        req.body.editTitle ||
+        req.body.editModalTitle ||
+        req.body.edittitle ||
+        req.body.title;
+      const author =
+        req.body.editAuthor ||
+        req.body.editModalAuthor ||
+        req.body.editauthor ||
+        req.body.author;
 
-      console.log('✅ Extracted values:');
-      console.log('   title:', title);
-      console.log('   author:', author);
+      console.log("✅ Extracted values:");
+      console.log("   title:", title);
+      console.log("   author:", author);
 
       if (!title || !author) {
-        console.error('❌ Missing title or author:', { title, author });
-        return reply.status(400).send({ error: 'Title and author are required' });
+        console.error("❌ Missing title or author:", { title, author });
+        return reply
+          .status(400)
+          .send({ error: "Title and author are required" });
       }
 
       let book = {
@@ -926,16 +1121,18 @@ function validateCsrfToken(request) {
         author: author,
       };
 
-      console.log('Updating book with values:', book);
+      console.log("Updating book with values:", book);
 
-      await fastify.inject({
-        method: 'put',
-        body: book,
-        url: `/api/todo/book`
-      }).then((x) => {
-        let uprec = JSON.parse(x.payload);
-        console.log('Update response:', uprec);
-      });
+      await fastify
+        .inject({
+          method: "put",
+          body: book,
+          url: `/api/todo/book`,
+        })
+        .then((x) => {
+          let uprec = JSON.parse(x.payload);
+          console.log("Update response:", uprec);
+        });
 
       const bookRow = `<tr id="book-${book._id}" data-book-id="${book._id}">
         <td>${book._id}</td>
@@ -971,7 +1168,7 @@ function validateCsrfToken(request) {
       await reply.datastar(async (sse) => {
         sse.patchElements(bookRow, {
           selector: `#book-${book._id}`,
-          mode: "outer"
+          mode: "outer",
         });
         // Close the modal
         sse.executeScript(`
@@ -981,24 +1178,26 @@ function validateCsrfToken(request) {
         `);
       });
 
-      console.log('✅ Update complete!');
+      console.log("✅ Update complete!");
     } catch (error) {
-      console.error('Error in update-modal:', error);
-      return reply.status(500).send({ error: 'Failed to update book' });
+      console.error("Error in update-modal:", error);
+      return reply.status(500).send({ error: "Failed to update book" });
     }
   });
 
   // Delete book - Datastar version
-  fastify.delete('/delete/:id', async (req, reply) => {
+  fastify.delete("/delete/:id", async (req, reply) => {
     const { id } = req.params;
 
     try {
-      console.log('Deleting book:', id);
+      console.log("Deleting book:", id);
 
-      await fastify.inject({
-        method: 'delete',
-        url: `/api/todo/book/${id}`
-      }).then((res) => res.json());
+      await fastify
+        .inject({
+          method: "delete",
+          url: `/api/todo/book/${id}`,
+        })
+        .then((res) => res.json());
 
       var index = books.map((el) => el._id).indexOf(id);
       if (index > -1) {
@@ -1009,12 +1208,275 @@ function validateCsrfToken(request) {
         sse.removeElements(`#book-${id}`);
       });
     } catch (error) {
-      console.error('Error in delete:', error);
-      return reply.status(500).send({ error: 'Failed to delete book' });
+      console.error("Error in delete:", error);
+      return reply.status(500).send({ error: "Failed to delete book" });
     }
   });
 
-}
-  module.exports.autoPrefix = '/api_view';  
+  // Location PlacePicker routes
+  fastify.get("/location", async (request, reply) => {
+    try {
+      await reply.view("./location/location.njk", {
+        title: "Location PlacePicker",
+        availableLocations: getAvailableLocations(),
+        interestingLocations: getInterestingLocations(),
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({ error: "Failed to load locations" });
+    }
+  });
 
- 
+  // Add location to interesting places
+  fastify.post("/places", async (request, reply) => {
+    try {
+      const locationId = request.query.locationId;
+      const location = AVAILABLE_LOCATIONS.find(loc => loc.id === locationId);
+
+      if (!location) {
+        return reply.status(404).send({ error: "Location not found" });
+      }
+
+      interestingLocationIds.add(locationId);
+
+      await reply.datastar((sse) => {
+        // Remove from available locations
+        sse.removeElements(`#available-locations #location-${locationId}`);
+
+        // Add to interesting locations
+        const html = `
+          <li id="location-${location.id}" class="location-item">
+            <button data-on:click="@delete('/api_view/places/${location.id}')">
+              <img src="/public/images/${location.image.src}" alt="${location.image.alt}" />
+              <h3>${location.title}</h3>
+            </button>
+          </li>
+        `;
+        sse.patchElements(html, {
+          selector: '#interesting-locations',
+          mode: 'append'
+        });
+
+        // Remove empty message if present
+        sse.removeElements('#interesting-locations .empty-message');
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({ error: "Failed to add location" });
+    }
+  });
+
+  // Remove location from interesting places
+  fastify.delete("/places/:id", async (request, reply) => {
+    try {
+      const locationId = request.params.id;
+      const location = AVAILABLE_LOCATIONS.find(loc => loc.id === locationId);
+
+      if (!location) {
+        return reply.status(404).send({ error: "Location not found" });
+      }
+
+      interestingLocationIds.delete(locationId);
+
+      await reply.datastar((sse) => {
+        // Remove from interesting locations
+        sse.removeElements(`#interesting-locations #location-${locationId}`);
+
+        // Add back to available locations
+        const html = `
+          <li id="location-${location.id}" class="location-item">
+            <button data-on:click="@post('/api_view/places?locationId=${location.id}')">
+              <img src="/public/images/${location.image.src}" alt="${location.image.alt}" />
+              <h3>${location.title}</h3>
+            </button>
+          </li>
+        `;
+        sse.patchElements(html, {
+          selector: '#available-locations',
+          mode: 'append'
+        });
+
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({ error: "Failed to remove location" });
+    }
+  });
+
+  // Shopping Cart routes
+  fastify.get("/shop", async (request, reply) => {
+    try {
+      await reply.view("./shoppingcart/shoppingcart.njk", {
+        title: "Elegant Clothing Shop",
+        products: PRODUCTS,
+        cart: shoppingCart,
+        cartCount: shoppingCart.length,
+        cartTotal: getCartTotal(),
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({ error: "Failed to load shop" });
+    }
+  });
+
+  // Product detail page
+  fastify.get("/shop/:id", async (request, reply) => {
+    try {
+      const product = PRODUCTS.find(p => p.id === request.params.id);
+
+      if (!product) {
+        return reply.status(404).send("Product not found");
+      }
+
+      await reply.view("./shoppingcart/shoppingcart.njk", {
+        title: product.title,
+        product: product,
+        cart: shoppingCart,
+        cartCount: shoppingCart.length,
+        cartTotal: getCartTotal(),
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({ error: "Failed to load product" });
+    }
+  });
+
+  // Add to cart
+  fastify.post("/cart", async (request, reply) => {
+    try {
+      const productId = request.query.productId;
+      const product = PRODUCTS.find(p => p.id === productId);
+
+      if (!product) {
+        return reply.status(404).send({ error: "Product not found" });
+      }
+
+      shoppingCart.push({ ...product, addedAt: Date.now() });
+
+      await reply.datastar((sse) => {
+        // Update cart and redirect to shop
+        sse.patchElements(renderCartSidebar());
+        sse.executeScript('window.location.href = "/api_view/shop"');
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({ error: "Failed to add to cart" });
+    }
+  });
+
+  // Remove from cart
+  fastify.delete("/cart/:index", async (request, reply) => {
+    try {
+      const index = parseInt(request.params.index);
+
+      if (index >= 0 && index < shoppingCart.length) {
+        shoppingCart.splice(index, 1);
+      }
+
+      await reply.datastar((sse) => {
+        sse.patchElements(renderCartSidebar());
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({ error: "Failed to remove from cart" });
+    }
+  });
+
+  // Bad Apple routes
+  fastify.get("/badapple", async (request, reply) => {
+    try {
+      await reply.view("./badapple/badapple.njk", {
+        title: "Bad Apple - Datastar",
+        frameCount: badAppleFrames.length,
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({ error: "Failed to load Bad Apple" });
+    }
+  });
+
+  // Bad Apple SSE streaming endpoint
+  fastify.get("/badapple/stream", async (request, reply) => {
+    const fps = 28;
+    const frameTime = 1000 / fps;
+    const totalFrames = badAppleSseFrames.length;
+
+    const raw = reply.raw;
+    raw.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+    raw.socket?.setNoDelay(true);
+    raw.flushHeaders();
+
+    const startTime = Date.now();
+    let aborted = false;
+    request.raw.on('close', () => { aborted = true; });
+
+    for (let i = 0; i < totalFrames && !aborted; i++) {
+      raw.write(badAppleSseFrames[i]);
+
+      const target = startTime + (i + 1) * frameTime;
+      const delay = target - Date.now();
+      if (delay > 0) await new Promise(r => setTimeout(r, delay));
+    }
+
+    if (!aborted) {
+      raw.write(`event: datastar-patch-signals\ndata: signals {"_contents":"Done!","_percentage":100,"_playing":false}\n\n`);
+    }
+    raw.end();
+  });
+
+  // Bad Apple SDK version - using @johntom/datastar-fastify SDK
+  fastify.get("/badapple-sdk", async (request, reply) => {
+    try {
+      await reply.view("./badapple/badapple-sdk.njk", {
+        title: "Bad Apple - SDK Version",
+        frameCount: badAppleFrames.length,
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({ error: "Failed to load Bad Apple SDK" });
+    }
+  });
+
+  // Bad Apple SDK streaming endpoint - uses reply.datastar() with patchSignals
+  fastify.get("/badapple-sdk/stream", async (request, reply) => {
+    const fps = 28;
+    const frameTime = 1000 / fps;
+    const totalFrames = badAppleFrames.length;
+
+    await reply.datastar(async (sse) => {
+      const startTime = Date.now();
+
+      for (let i = 0; i < totalFrames; i++) {
+        const frame = badAppleFrames[i];
+        const pct = (i / totalFrames) * 100;
+        const totalSecs = Math.floor(i / 30);
+        const mins = Math.floor(totalSecs / 60);
+        const secs = totalSecs % 60;
+        const elapsed = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+        sse.patchSignals({
+          _contents: frame,
+          _percentage: pct,
+          _elapsed: elapsed
+        });
+
+        // Drift-correcting delay
+        const target = startTime + (i + 1) * frameTime;
+        const delay = target - Date.now();
+        if (delay > 0) await new Promise(r => setTimeout(r, delay));
+      }
+
+      sse.patchSignals({
+        _contents: 'Done!',
+        _percentage: 100,
+        _playing: false
+      });
+    });
+  });
+};
+module.exports.autoPrefix = "/api_view";

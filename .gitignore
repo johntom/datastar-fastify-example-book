@@ -80,4 +80,6 @@ metatags.html
 /dist
 /src/views/tomselect
 Z_*
+/src/views/shoppingcart
+/src/views/location
 
