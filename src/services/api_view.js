@@ -1228,159 +1228,159 @@ module.exports = async function (fastify, opts) {
   });
 
   // Add location to interesting places
-  fastify.post("/places", async (request, reply) => {
-    try {
-      const locationId = request.query.locationId;
-      const location = AVAILABLE_LOCATIONS.find(loc => loc.id === locationId);
+  // fastify.post("/places", async (request, reply) => {
+  //   try {
+  //     const locationId = request.query.locationId;
+  //     const location = AVAILABLE_LOCATIONS.find(loc => loc.id === locationId);
 
-      if (!location) {
-        return reply.status(404).send({ error: "Location not found" });
-      }
+  //     if (!location) {
+  //       return reply.status(404).send({ error: "Location not found" });
+  //     }
 
-      interestingLocationIds.add(locationId);
+  //     interestingLocationIds.add(locationId);
 
-      await reply.datastar((sse) => {
-        // Remove from available locations
-        sse.removeElements(`#available-locations #location-${locationId}`);
+  //     await reply.datastar((sse) => {
+  //       // Remove from available locations
+  //       sse.removeElements(`#available-locations #location-${locationId}`);
 
-        // Add to interesting locations
-        const html = `
-          <li id="location-${location.id}" class="location-item">
-            <button data-on:click="@delete('/api_view/places/${location.id}')">
-              <img src="/public/images/${location.image.src}" alt="${location.image.alt}" />
-              <h3>${location.title}</h3>
-            </button>
-          </li>
-        `;
-        sse.patchElements(html, {
-          selector: '#interesting-locations',
-          mode: 'append'
-        });
+  //       // Add to interesting locations
+  //       const html = `
+  //         <li id="location-${location.id}" class="location-item">
+  //           <button data-on:click="@delete('/api_view/places/${location.id}')">
+  //             <img src="/public/images/${location.image.src}" alt="${location.image.alt}" />
+  //             <h3>${location.title}</h3>
+  //           </button>
+  //         </li>
+  //       `;
+  //       sse.patchElements(html, {
+  //         selector: '#interesting-locations',
+  //         mode: 'append'
+  //       });
 
-        // Remove empty message if present
-        sse.removeElements('#interesting-locations .empty-message');
-      });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.status(500).send({ error: "Failed to add location" });
-    }
-  });
+  //       // Remove empty message if present
+  //       sse.removeElements('#interesting-locations .empty-message');
+  //     });
+  //   } catch (error) {
+  //     fastify.log.error(error);
+  //     return reply.status(500).send({ error: "Failed to add location" });
+  //   }
+  // });
 
-  // Remove location from interesting places
-  fastify.delete("/places/:id", async (request, reply) => {
-    try {
-      const locationId = request.params.id;
-      const location = AVAILABLE_LOCATIONS.find(loc => loc.id === locationId);
+  // // Remove location from interesting places
+  // fastify.delete("/places/:id", async (request, reply) => {
+  //   try {
+  //     const locationId = request.params.id;
+  //     const location = AVAILABLE_LOCATIONS.find(loc => loc.id === locationId);
 
-      if (!location) {
-        return reply.status(404).send({ error: "Location not found" });
-      }
+  //     if (!location) {
+  //       return reply.status(404).send({ error: "Location not found" });
+  //     }
 
-      interestingLocationIds.delete(locationId);
+  //     interestingLocationIds.delete(locationId);
 
-      await reply.datastar((sse) => {
-        // Remove from interesting locations
-        sse.removeElements(`#interesting-locations #location-${locationId}`);
+  //     await reply.datastar((sse) => {
+  //       // Remove from interesting locations
+  //       sse.removeElements(`#interesting-locations #location-${locationId}`);
 
-        // Add back to available locations
-        const html = `
-          <li id="location-${location.id}" class="location-item">
-            <button data-on:click="@post('/api_view/places?locationId=${location.id}')">
-              <img src="/public/images/${location.image.src}" alt="${location.image.alt}" />
-              <h3>${location.title}</h3>
-            </button>
-          </li>
-        `;
-        sse.patchElements(html, {
-          selector: '#available-locations',
-          mode: 'append'
-        });
+  //       // Add back to available locations
+  //       const html = `
+  //         <li id="location-${location.id}" class="location-item">
+  //           <button data-on:click="@post('/api_view/places?locationId=${location.id}')">
+  //             <img src="/public/images/${location.image.src}" alt="${location.image.alt}" />
+  //             <h3>${location.title}</h3>
+  //           </button>
+  //         </li>
+  //       `;
+  //       sse.patchElements(html, {
+  //         selector: '#available-locations',
+  //         mode: 'append'
+  //       });
 
-      });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.status(500).send({ error: "Failed to remove location" });
-    }
-  });
+  //     });
+  //   } catch (error) {
+  //     fastify.log.error(error);
+  //     return reply.status(500).send({ error: "Failed to remove location" });
+  //   }
+  // });
 
   // Shopping Cart routes
-  fastify.get("/shop", async (request, reply) => {
-    try {
-      await reply.view("./shoppingcart/shoppingcart.njk", {
-        title: "Elegant Clothing Shop",
-        products: PRODUCTS,
-        cart: shoppingCart,
-        cartCount: shoppingCart.length,
-        cartTotal: getCartTotal(),
-      });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.status(500).send({ error: "Failed to load shop" });
-    }
-  });
+  // fastify.get("/shop", async (request, reply) => {
+  //   try {
+  //     await reply.view("./shoppingcart/shoppingcart.njk", {
+  //       title: "Elegant Clothing Shop",
+  //       products: PRODUCTS,
+  //       cart: shoppingCart,
+  //       cartCount: shoppingCart.length,
+  //       cartTotal: getCartTotal(),
+  //     });
+  //   } catch (error) {
+  //     fastify.log.error(error);
+  //     return reply.status(500).send({ error: "Failed to load shop" });
+  //   }
+  // });
 
-  // Product detail page
-  fastify.get("/shop/:id", async (request, reply) => {
-    try {
-      const product = PRODUCTS.find(p => p.id === request.params.id);
+  // // Product detail page
+  // fastify.get("/shop/:id", async (request, reply) => {
+  //   try {
+  //     const product = PRODUCTS.find(p => p.id === request.params.id);
 
-      if (!product) {
-        return reply.status(404).send("Product not found");
-      }
+  //     if (!product) {
+  //       return reply.status(404).send("Product not found");
+  //     }
 
-      await reply.view("./shoppingcart/shoppingcart.njk", {
-        title: product.title,
-        product: product,
-        cart: shoppingCart,
-        cartCount: shoppingCart.length,
-        cartTotal: getCartTotal(),
-      });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.status(500).send({ error: "Failed to load product" });
-    }
-  });
+  //     await reply.view("./shoppingcart/shoppingcart.njk", {
+  //       title: product.title,
+  //       product: product,
+  //       cart: shoppingCart,
+  //       cartCount: shoppingCart.length,
+  //       cartTotal: getCartTotal(),
+  //     });
+  //   } catch (error) {
+  //     fastify.log.error(error);
+  //     return reply.status(500).send({ error: "Failed to load product" });
+  //   }
+  // });
 
-  // Add to cart
-  fastify.post("/cart", async (request, reply) => {
-    try {
-      const productId = request.query.productId;
-      const product = PRODUCTS.find(p => p.id === productId);
+  // // Add to cart
+  // fastify.post("/cart", async (request, reply) => {
+  //   try {
+  //     const productId = request.query.productId;
+  //     const product = PRODUCTS.find(p => p.id === productId);
 
-      if (!product) {
-        return reply.status(404).send({ error: "Product not found" });
-      }
+  //     if (!product) {
+  //       return reply.status(404).send({ error: "Product not found" });
+  //     }
 
-      shoppingCart.push({ ...product, addedAt: Date.now() });
+  //     shoppingCart.push({ ...product, addedAt: Date.now() });
 
-      await reply.datastar((sse) => {
-        // Update cart and redirect to shop
-        sse.patchElements(renderCartSidebar());
-        sse.executeScript('window.location.href = "/api_view/shop"');
-      });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.status(500).send({ error: "Failed to add to cart" });
-    }
-  });
+  //     await reply.datastar((sse) => {
+  //       // Update cart and redirect to shop
+  //       sse.patchElements(renderCartSidebar());
+  //       sse.executeScript('window.location.href = "/api_view/shop"');
+  //     });
+  //   } catch (error) {
+  //     fastify.log.error(error);
+  //     return reply.status(500).send({ error: "Failed to add to cart" });
+  //   }
+  // });
 
-  // Remove from cart
-  fastify.delete("/cart/:index", async (request, reply) => {
-    try {
-      const index = parseInt(request.params.index);
+  // // Remove from cart
+  // fastify.delete("/cart/:index", async (request, reply) => {
+  //   try {
+  //     const index = parseInt(request.params.index);
 
-      if (index >= 0 && index < shoppingCart.length) {
-        shoppingCart.splice(index, 1);
-      }
+  //     if (index >= 0 && index < shoppingCart.length) {
+  //       shoppingCart.splice(index, 1);
+  //     }
 
-      await reply.datastar((sse) => {
-        sse.patchElements(renderCartSidebar());
-      });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.status(500).send({ error: "Failed to remove from cart" });
-    }
-  });
+  //     await reply.datastar((sse) => {
+  //       sse.patchElements(renderCartSidebar());
+  //     });
+  //   } catch (error) {
+  //     fastify.log.error(error);
+  //     return reply.status(500).send({ error: "Failed to remove from cart" });
+  //   }
+  // });
 
   // Bad Apple routes
   fastify.get("/badapple", async (request, reply) => {
