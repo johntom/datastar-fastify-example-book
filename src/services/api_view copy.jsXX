@@ -40,84 +40,84 @@ const badAppleSseFrames = badAppleFrames.map((frame, i) => {
 console.log(`Bad Apple: ${badAppleFrames.length} frames loaded`);
 
 // Track user's selected "interesting" locations
-// const interestingLocationIds = new Set();
+const interestingLocationIds = new Set();
 
-// function getAvailableLocations() {
-//   return AVAILABLE_LOCATIONS.filter(loc => !interestingLocationIds.has(loc.id));
-// }
+function getAvailableLocations() {
+  return AVAILABLE_LOCATIONS.filter(loc => !interestingLocationIds.has(loc.id));
+}
 
-// function getInterestingLocations() {
-//   return AVAILABLE_LOCATIONS.filter(loc => interestingLocationIds.has(loc.id));
-// }
+function getInterestingLocations() {
+  return AVAILABLE_LOCATIONS.filter(loc => interestingLocationIds.has(loc.id));
+}
 
-// // Shopping Cart data
-// const PRODUCTS = [
-//   {
-//     id: 'p1',
-//     title: 'Denim Pioneer Jacket',
-//     price: 129.99,
-//     image: 'denim-pioneer.jpg',
-//     description: 'A rugged yet stylish denim jacket, perfect for the modern adventurer. Features a classic cut with contemporary details.',
-//   },
-//   {
-//     id: 'p2',
-//     title: 'Dream Gown',
-//     price: 349.99,
-//     image: 'dream-gown.jpg',
-//     description: 'An ethereal gown that captures the essence of elegance. Perfect for special occasions and unforgettable moments.',
-//   },
-//   {
-//     id: 'p3',
-//     title: 'Merlot Suit',
-//     price: 459.99,
-//     image: 'merlot-suit.jpg',
-//     description: 'A sophisticated suit in a rich merlot hue. Tailored to perfection for the discerning gentleman.',
-//   },
-//   {
-//     id: 'p4',
-//     title: 'Mocha Overcoat',
-//     price: 289.99,
-//     image: 'mocha-overcoat.jpg',
-//     description: 'A luxurious overcoat in warm mocha tones. The perfect companion for cool evenings and stylish outings.',
-//   },
-//   {
-//     id: 'p5',
-//     title: 'Moonlight Dress',
-//     price: 199.99,
-//     image: 'moonlight-dress.jpg',
-//     description: 'A stunning dress that shimmers like moonlight on water. Designed for those who dare to stand out.',
-//   },
-//   {
-//     id: 'p6',
-//     title: 'Rain Jacket',
-//     price: 149.99,
-//     image: 'rain-jacket.jpg',
-//     description: 'Stay dry in style with this functional yet fashionable rain jacket. Built for all-weather adventures.',
-//   },
-// ];
+// Shopping Cart data
+const PRODUCTS = [
+  {
+    id: 'p1',
+    title: 'Denim Pioneer Jacket',
+    price: 129.99,
+    image: 'denim-pioneer.jpg',
+    description: 'A rugged yet stylish denim jacket, perfect for the modern adventurer. Features a classic cut with contemporary details.',
+  },
+  {
+    id: 'p2',
+    title: 'Dream Gown',
+    price: 349.99,
+    image: 'dream-gown.jpg',
+    description: 'An ethereal gown that captures the essence of elegance. Perfect for special occasions and unforgettable moments.',
+  },
+  {
+    id: 'p3',
+    title: 'Merlot Suit',
+    price: 459.99,
+    image: 'merlot-suit.jpg',
+    description: 'A sophisticated suit in a rich merlot hue. Tailored to perfection for the discerning gentleman.',
+  },
+  {
+    id: 'p4',
+    title: 'Mocha Overcoat',
+    price: 289.99,
+    image: 'mocha-overcoat.jpg',
+    description: 'A luxurious overcoat in warm mocha tones. The perfect companion for cool evenings and stylish outings.',
+  },
+  {
+    id: 'p5',
+    title: 'Moonlight Dress',
+    price: 199.99,
+    image: 'moonlight-dress.jpg',
+    description: 'A stunning dress that shimmers like moonlight on water. Designed for those who dare to stand out.',
+  },
+  {
+    id: 'p6',
+    title: 'Rain Jacket',
+    price: 149.99,
+    image: 'rain-jacket.jpg',
+    description: 'Stay dry in style with this functional yet fashionable rain jacket. Built for all-weather adventures.',
+  },
+];
 
-// // In-memory shopping cart
-// const shoppingCart = [];
+// In-memory shopping cart
+const shoppingCart = [];
 
-// function getCartTotal() {
-//   return shoppingCart.reduce((sum, item) => sum + item.price, 0).toFixed(2);
-// }
+function getCartTotal() {
+  return shoppingCart.reduce((sum, item) => sum + item.price, 0).toFixed(2);
+}
 
-// function renderCartItems() {
-//   if (shoppingCart.length === 0) {
-//     return '<p class="empty-cart">Your cart is empty</p>';
-//   }
-//   return shoppingCart.map((item, index) =>
-//     `<li id="cart-item-${index}" class="cart-item"><span class="cart-item-title">${item.title}</span><span class="cart-item-price">$${item.price}</span><button class="cart-item-remove" data-on:click="@delete('/api_view/cart/${index}')">x</button></li>`
-//   ).join('');
-// }
+function renderCartItems() {
+  if (shoppingCart.length === 0) {
+    return '<p class="empty-cart">Your cart is empty</p>';
+  }
+  return shoppingCart.map((item, index) =>
+    `<li id="cart-item-${index}" class="cart-item"><span class="cart-item-title">${item.title}</span><span class="cart-item-price">$${item.price}</span><button class="cart-item-remove" data-on:click="@delete('/api_view/cart/${index}')">x</button></li>`
+  ).join('');
+}
 
-// function renderCartSidebar() {
-//   const countHtml = `<h2 id="cart-header">Cart <span id="cart-count">${shoppingCart.length > 0 ? `(${shoppingCart.length})` : ''}</span></h2>`;
-//   const itemsHtml = `<ul id="cart-items">${renderCartItems()}</ul>`;
-//   const totalHtml = shoppingCart.length > 0 ? `<p id="cart-total" class="cart-total">Total: $${getCartTotal()}</p>` : '<p id="cart-total"></p>';
-//   return `<aside id="cart-sidebar">${countHtml}${itemsHtml}${totalHtml}</aside>`;
-// }
+function renderCartSidebar() {
+  const countHtml = `<h2 id="cart-header">Cart <span id="cart-count">${shoppingCart.length > 0 ? `(${shoppingCart.length})` : ''}</span></h2>`;
+  const itemsHtml = `<ul id="cart-items">${renderCartItems()}</ul>`;
+  const totalHtml = shoppingCart.length > 0 ? `<p id="cart-total" class="cart-total">Total: $${getCartTotal()}</p>` : '<p id="cart-total"></p>';
+  return `<aside id="cart-sidebar">${countHtml}${itemsHtml}${totalHtml}</aside>`;
+}
 
 const messages = [
   "Stop overcomplicating it.",
