@@ -11,7 +11,7 @@ A full-stack CRUD application demonstrating [Datastar](https://data-star.dev) wi
 - Todo App example
 - Toast notifications
 - Basic Datastar examples
-- Post of Bad Apple!
+- Port of Bad Apple!
 ## Quick Start
 
 ### Prerequisites
