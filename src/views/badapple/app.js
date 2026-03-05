@@ -93,7 +93,7 @@ fastify.get('/', async (request, reply) => {
       <head>
         <title>Shop</title>
         <link rel="stylesheet" href="/main.css">
-        <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.7/bundles/datastar.js"></script>
+        <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.8/bundles/datastar.js"></script>
       </head>
       <body>
         <header id="main-header">
@@ -137,7 +137,7 @@ fastify.get('/products/:id', async (request, reply) => {
       <head>
         <title>${product.title}</title>
         <link rel="stylesheet" href="/main.css">
-        <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.7/bundles/datastar.js"></script>
+        <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.8/bundles/datastar.js"></script>
       </head>
       <body>
         <header id="main-header">
@@ -224,7 +224,7 @@ fastify.get('/bad-apple', async (request, reply) => {
 <html>
 <head>
   <title>Bad Apple - Datastar</title>
-  <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.7/bundles/datastar.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.8/bundles/datastar.js"></script>
   <style>
     body { background: #000; color: #0f0; font-family: monospace; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
     h1 { margin: 10px 0; font-size: 18px; }

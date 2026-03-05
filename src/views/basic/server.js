@@ -52,7 +52,7 @@ function renderTasks() {
       (task) =>
         `<div class="task ${task.completed ? "completed" : ""}">` +
         `<span>${escapeHtml(task.text)}</span>` +
-        `<button data-on-click="${PostSSE(`/todos/${task.id}/toggle`)}">` +
+        `<button data-on:click="${PostSSE(`/todos/${task.id}/toggle`)}">` +
         `${task.completed ? "✓ Mark Incomplete" : "Mark Complete"}` +
         `</button>` +
         `</div>`
@@ -71,7 +71,7 @@ fastify.get("/", async (request, reply) => {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Datastar-Nodejs/Fastify Todo List</title>
-      <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@main/bundles/datastar.js"></script>
+      <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.8/bundles/datastar.js"></script>
       <style>
         * { box-sizing: border-box; }
 
@@ -199,9 +199,9 @@ fastify.get("/", async (request, reply) => {
       <!-- Test basic signal binding -->
       <div data-signals="{message: ''}" class="counter">
         <h3>Basic Signal Test</h3>
-        <input data-bind-message placeholder="Type something..." />
+        <input data-bind:message placeholder="Type something..." />
         <p>Echo: <strong><span data-text="$message || '(empty)'"></span></strong></p>
-        <div data-computed-uppercase="$message.toUpperCase()">
+        <div data-computed:uppercase="$message.toUpperCase()">
           Uppercase: <strong><span data-text="$uppercase"></span></strong>
         </div>
       </div>
@@ -213,9 +213,9 @@ fastify.get("/", async (request, reply) => {
           <strong>Count: </strong><span data-text="$count"></span>
         </div>
         <div>
-          <button data-on-click="$count = Number($count) + 1">➕ Increment</button>
-          <button data-on-click="$count = Number($count) - 1">➖ Decrement</button>
-          <button data-on-click="$count = 0" style="background: #dc3545;">🔄 Reset</button>
+          <button data-on:click="$count = Number($count) + 1">➕ Increment</button>
+          <button data-on:click="$count = Number($count) - 1">➖ Decrement</button>
+          <button data-on:click="$count = 0" style="background: #dc3545;">🔄 Reset</button>
         </div>
       </div>
 
@@ -231,7 +231,7 @@ fastify.get("/", async (request, reply) => {
           <div id="hal2">
 
         </div>
-          <button data-on-click="${GetSSE('/api/hal')}">➕ test hal </button>
+          <button data-on:click="${GetSSE('/api/hal')}">➕ test hal </button>
    </div>
 
      <!-- Simple Timer -->
@@ -243,7 +243,7 @@ fastify.get("/", async (request, reply) => {
        Waiting
         </div>
 
-          <button data-on-click="${GetSSE('/api/time-stream')}">➕ test timer </button>
+          <button data-on:click="${GetSSE('/api/time-stream')}">➕ test timer </button>
    </div>
 
 
@@ -253,8 +253,8 @@ fastify.get("/", async (request, reply) => {
       <h3>Script Execution</h4>
       <section>
    
-      <button data-on-click="${GetSSE('/api/alert')}">Show Alert</button>
-      <button data-on-click="${GetSSE('/api/console-log')}">Console Log</button>
+      <button data-on:click="${GetSSE('/api/alert')}">Show Alert</button>
+      <button data-on:click="${GetSSE('/api/console-log')}">Console Log</button>
     </section>
     </div>
 
@@ -266,11 +266,11 @@ fastify.get("/", async (request, reply) => {
 
         <div class="input-group">
           <input
-            data-bind-newtask
+            data-bind:newtask
             placeholder="Enter a new task..."
-            data-on-keydown.enter="$newtask.trim() && ${PostSSE('/todos')}"
+            data-on:keydown.enter="$newtask.trim() && ${PostSSE('/todos')}"
           >
-          <button data-on-click="$newtask.trim() && ${PostSSE('/todos')}">➕ Add Task</button>
+          <button data-on:click="$newtask.trim() && ${PostSSE('/todos')}">➕ Add Task</button>
         </div>
 
         <div id="tasks-container">
