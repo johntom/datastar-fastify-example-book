@@ -11,6 +11,7 @@ Live Demo: [demo on render](https://datastar-fastify-example-book.onrender.com/)
 - Live data sync across multiple browser sessions
 - MongoDB integration (optional)
 - Todo App example
+### Additional Features
 - Toast notifications
 - Basic Datastar examples
 - Port of Bad Apple!
