@@ -191,7 +191,7 @@ fastify.addHook('onSend', async (request, reply, payload) => {
 const start = async () => {
   try {
     const port = process.env.PORT || process.env.port || 3000;
-    const host = process.env.HOST || process.env.host || '127.0.0.1';
+    const host = process.env.HOST || process.env.host || '0.0.0.0';
 
     await fastify.listen({ port, host })
 
