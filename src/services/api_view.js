@@ -1478,5 +1478,120 @@ module.exports = async function (fastify, opts) {
       });
     });
   });
+
+  // ─── Rocket Tom Select ──────────────────────────────────────
+  const FRUITS = [
+    { value: "apple", text: "Apple", origin: "Central Asia", season: "Fall" },
+    { value: "banana", text: "Banana", origin: "Southeast Asia", season: "Year-round" },
+    { value: "cherry", text: "Cherry", origin: "Europe", season: "Summer" },
+    { value: "dragonfruit", text: "Dragon Fruit", origin: "Central America", season: "Summer" },
+    { value: "elderberry", text: "Elderberry", origin: "Europe", season: "Late Summer" },
+    { value: "fig", text: "Fig", origin: "Mediterranean", season: "Late Summer" },
+    { value: "grape", text: "Grape", origin: "Near East", season: "Fall" },
+    { value: "honeydew", text: "Honeydew", origin: "West Africa", season: "Summer" },
+    { value: "kiwi", text: "Kiwi", origin: "China", season: "Winter" },
+    { value: "lemon", text: "Lemon", origin: "South Asia", season: "Year-round" },
+    { value: "mango", text: "Mango", origin: "South Asia", season: "Summer" },
+    { value: "nectarine", text: "Nectarine", origin: "China", season: "Summer" },
+    { value: "orange", text: "Orange", origin: "Southeast Asia", season: "Winter" },
+    { value: "papaya", text: "Papaya", origin: "Central America", season: "Year-round" },
+    { value: "quince", text: "Quince", origin: "Caucasus", season: "Fall" },
+  ];
+
+  const USERS = [
+    { value: "u1", text: "Alice Johnson" },
+    { value: "u2", text: "Bob Smith" },
+    { value: "u3", text: "Charlie Brown" },
+    { value: "u4", text: "Diana Prince" },
+    { value: "u5", text: "Eve Torres" },
+    { value: "u6", text: "Frank Castle" },
+    { value: "u7", text: "Grace Hopper" },
+    { value: "u8", text: "Hank Pym" },
+  ];
+
+  const TAGS = [
+    { value: "javascript", text: "JavaScript" },
+    { value: "typescript", text: "TypeScript" },
+    { value: "node", text: "Node.js" },
+    { value: "datastar", text: "Datastar" },
+    { value: "fastify", text: "Fastify" },
+  ];
+
+  fastify.get("/rocket-tomselect", async (request, reply) => {
+    const data = {
+      title: "Rocket Tom Select",
+      fruitsJson: JSON.stringify(FRUITS),
+      tagsJson: JSON.stringify(TAGS),
+    };
+    await reply.view("./rocket-tomselect/rocket-tomselect.njk", data);
+  });
+
+  fastify.get("/rocket-tomselect/search-users", async (request, reply) => {
+    const q = (request.query.q || "").toLowerCase();
+    const results = USERS.filter((u) => u.text.toLowerCase().includes(q));
+    return results;
+  });
+
+  // ─── Rocket Tabulator ──────────────────────────────────────
+  const EMPLOYEES = [
+    { id: 1, name: "Alice Johnson", department: "Engineering", salary: 95000, startDate: "2020-03-15", active: true },
+    { id: 2, name: "Bob Smith", department: "Marketing", salary: 72000, startDate: "2019-07-22", active: true },
+    { id: 3, name: "Charlie Brown", department: "Engineering", salary: 105000, startDate: "2018-01-10", active: true },
+    { id: 4, name: "Diana Prince", department: "HR", salary: 68000, startDate: "2021-11-01", active: false },
+    { id: 5, name: "Eve Torres", department: "Engineering", salary: 112000, startDate: "2017-06-30", active: true },
+    { id: 6, name: "Frank Castle", department: "Sales", salary: 78000, startDate: "2022-02-14", active: true },
+    { id: 7, name: "Grace Hopper", department: "Engineering", salary: 125000, startDate: "2016-09-05", active: true },
+    { id: 8, name: "Hank Pym", department: "R&D", salary: 98000, startDate: "2020-08-20", active: false },
+    { id: 9, name: "Ivy Chen", department: "Marketing", salary: 65000, startDate: "2023-01-09", active: true },
+    { id: 10, name: "Jack Ryan", department: "Sales", salary: 82000, startDate: "2019-04-18", active: true },
+  ];
+
+  fastify.get("/rocket-tabulator", async (request, reply) => {
+    const columnsBasic = [
+      { title: "ID", field: "id", width: 60, headerFilter: true },
+      { title: "Name", field: "name", headerFilter: true },
+      { title: "Department", field: "department", headerFilter: "list", headerFilterParams: { valuesLookup: true, clearable: true, sort: "asc", placeholderEmpty: "All", placeholderLoaded: "All" } },
+      { title: "Salary", field: "salary", hozAlign: "right", formatter: "money", formatterParams: { thousand: ",", symbol: "$" } },
+      { title: "Start Date", field: "startDate", width: 110 },
+      { title: "Active", field: "active", formatter: "tickCross", width: 80 },
+    ];
+    const columnsClick = [
+      { title: "ID", field: "id", width: 60 },
+      { title: "Name", field: "name" },
+      { title: "Department", field: "department" },
+      { title: "Salary", field: "salary", hozAlign: "right", formatter: "money", formatterParams: { thousand: ",", symbol: "$" } },
+    ];
+    const columnsSelect = [
+      { title: "ID", field: "id", width: 60 },
+      { title: "Name", field: "name" },
+      { title: "Department", field: "department" },
+      { title: "Salary", field: "salary", hozAlign: "right", formatter: "money", formatterParams: { thousand: ",", symbol: "$" } },
+      { title: "Start Date", field: "startDate", width: 110 },
+    ];
+    const columnsDynamic = [
+      { title: "Name", field: "name", headerFilter: true },
+      { title: "Department", field: "department", headerFilter: true },
+      { title: "Active", field: "active", formatter: "tickCross", width: 80 },
+    ];
+
+    const employeesJson = JSON.stringify(EMPLOYEES);
+    const activeJson = JSON.stringify(EMPLOYEES.filter((e) => e.active));
+    const inactiveJson = JSON.stringify(EMPLOYEES.filter((e) => !e.active));
+
+    const data = {
+      title: "Rocket Tabulator",
+      employeesJson: employeesJson,
+      columnsBasicJson: JSON.stringify(columnsBasic),
+      columnsClickJson: JSON.stringify(columnsClick),
+      columnsSelectJson: JSON.stringify(columnsSelect),
+      columnsDynamicJson: JSON.stringify(columnsDynamic),
+      initialSortJson: JSON.stringify([{ column: "name", dir: "asc" }]),
+      dynamicSignalsJson: JSON.stringify({ filterMode: "all", empData: employeesJson }),
+      employeesDoubleJson: JSON.stringify(employeesJson),
+      activeDoubleJson: JSON.stringify(activeJson),
+      inactiveDoubleJson: JSON.stringify(inactiveJson),
+    };
+    await reply.view("./rocket-tabulator/rocket-tabulator.njk", data);
+  });
 };
 module.exports.autoPrefix = "/api_view";

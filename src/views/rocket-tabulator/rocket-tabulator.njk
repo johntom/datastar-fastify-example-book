@@ -1,0 +1,302 @@
+{% extends "layout.njk" %}
+
+{% block datastar_script %}
+<script type="module" src="/public/js/datastar-pro.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<!-- Tabulator CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/css/tabulator_modern.min.css" />
+
+<style>
+  .rocket-wrapper {
+    max-width: 720px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  .rocket-wrapper h1 { margin-bottom: 0.25rem; }
+  .subtitle { color: #666; margin-bottom: 2rem; }
+  .card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .card h2 { margin-top: 0; font-size: 1.1rem; }
+  .card p { color: #555; font-size: 0.9rem; }
+  .output {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #f0f4f8;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.85rem;
+  }
+  rocket-tabulator {
+    display: block;
+    margin: 1rem 0;
+  }
+</style>
+
+<div class="rocket-wrapper">
+  <h1>Rocket + Tabulator</h1>
+  <p class="subtitle">Datastar Rocket web component wrapping Tabulator 6.3</p>
+
+  <!-- Rocket component definition -->
+  <template data-rocket:rocket-tabulator
+    data-prop:columns="str"
+    data-prop:data="str"
+    data-prop:height="str='311px'"
+    data-prop:layout="str='fitColumns'"
+    data-prop:placeholder="str='No Data'"
+    data-prop:movable-columns="bool"
+    data-prop:resizable-columns="bool=true"
+    data-prop:enable-row-click="bool"
+    data-prop:selectable-rows="bool"
+    data-prop:initial-sort="str"
+    data-import:Tabulator__iife="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/js/tabulator.min.js"
+  >
+    <script>
+      var tabInstance = null
+      var tabReady = null
+      var _colTimer = null
+
+      function parseJSON(sig) {
+        try {
+          var raw = '' + (sig || '')
+          return raw ? JSON.parse(raw) : []
+        } catch(e) {
+          return []
+        }
+      }
+
+      function emitColumnState() {
+        clearTimeout(_colTimer)
+        _colTimer = setTimeout(function () {
+          if (!tabInstance) return
+          var cols = tabInstance.getColumns()
+            .filter(function (c) { return !!c.getField() })
+            .map(function (c) {
+              return { field: c.getField(), visible: c.isVisible(), width: c.getWidth() }
+            })
+          el.dispatchEvent(new CustomEvent('tab-columns-changed', {
+            detail: { columns: cols },
+            bubbles: true,
+            composed: true
+          }))
+        }, 600)
+      }
+
+      effect(function() {
+        if (!$$tableEl || !Tabulator) return
+        if (tabInstance) return
+
+        var cols = parseJSON($$columns)
+        var rows = parseJSON($$data)
+        var sort = parseJSON($$initialSort)
+
+        if (!!($$selectableRows)) {
+          cols.unshift({
+            formatter: 'rowSelection',
+            titleFormatter: 'rowSelection',
+            headerSort: false,
+            resizable: false,
+            frozen: true,
+            width: 40,
+            hozAlign: 'center',
+            headerHozAlign: 'center',
+            cssClass: 'tabulator-row-select-col'
+          })
+        }
+
+        var config = {
+          data:             rows,
+          layout:           '' + ($$layout || 'fitColumns'),
+          height:           '' + ($$height || '311px'),
+          movableColumns:   !!($$movableColumns),
+          resizableColumns: !!($$resizableColumns),
+          placeholder:      '' + ($$placeholder || 'No Data'),
+          columns:          cols
+        }
+
+        if (!!($$selectableRows)) {
+          config.selectableRows = true
+        }
+
+        if (sort.length) {
+          config.initialSort = sort
+        }
+
+        if (!!($$enableRowClick)) {
+          config.rowFormatter = function (row) {
+            var rowEl = row.getElement()
+            rowEl.style.cursor = 'pointer'
+            rowEl.addEventListener('click', function () {
+              el.dispatchEvent(new CustomEvent('tab-row-click', {
+                detail: { row: row.getData() },
+                bubbles: true,
+                composed: true
+              }))
+            })
+          }
+        }
+
+        tabInstance = new Tabulator($$tableEl, config)
+
+        prevDataStr = '' + ($$data || '')
+
+        tabReady = new Promise(function(resolve) {
+          tabInstance.on('tableBuilt', resolve)
+        })
+        tabInstance.on('columnMoved',             emitColumnState)
+        tabInstance.on('columnResized',           emitColumnState)
+        tabInstance.on('columnVisibilityChanged', emitColumnState)
+
+        if (!!($$selectableRows)) {
+          function emitSelection() {
+            var selected = tabInstance.getSelectedData()
+            el.dispatchEvent(new CustomEvent('tab-rows-selected', {
+              detail: { rows: selected },
+              bubbles: true,
+              composed: true
+            }))
+          }
+          tabInstance.on('rowSelected',   emitSelection)
+          tabInstance.on('rowDeselected', emitSelection)
+        }
+      })
+
+      var prevDataStr = ''
+      effect(function() {
+        if (!tabInstance) return
+        var dataStr = '' + ($$data || '')
+        if (dataStr !== prevDataStr) {
+          prevDataStr = dataStr
+          tabReady.then(function() {
+            try {
+              var parsed = dataStr ? JSON.parse(dataStr) : []
+              tabInstance.setData(parsed)
+            } catch(e) {}
+          })
+        }
+      })
+
+      onCleanup(function() {
+        clearTimeout(_colTimer)
+        if (tabInstance) {
+          tabInstance.destroy()
+          tabInstance = null
+        }
+      })
+    </script>
+
+    <div data-ref="tableEl" style="width:100%"></div>
+  </template>
+
+  <!-- Example 1: Basic Grid -->
+  <div class="card">
+    <h2>Basic Grid — Employees</h2>
+    <p>Sortable columns, header filters, money formatter. Drag columns to reorder.</p>
+
+    <rocket-tabulator
+      columns='{{ columnsBasicJson | safe }}'
+      data='{{ employeesJson | safe }}'
+      height="320px"
+      layout="fitColumns"
+      movable-columns="true"
+      initial-sort='{{ initialSortJson | safe }}'
+    ></rocket-tabulator>
+  </div>
+
+  <!-- Example 2: Row Click -->
+  <div class="card" data-signals:clickedEmployee="''">
+    <h2>Row Click — Employee Detail</h2>
+    <p>Click any row to see its data below.</p>
+
+    <rocket-tabulator
+      columns='{{ columnsClickJson | safe }}'
+      data='{{ employeesJson | safe }}'
+      height="280px"
+      enable-row-click="true"
+      data-on:tab-row-click="$clickedEmployee = JSON.stringify(evt.detail.row)"
+    ></rocket-tabulator>
+
+    <div class="output">
+      Clicked: <span data-text="$clickedEmployee || '(click a row)'"></span>
+    </div>
+  </div>
+
+  <!-- Example 3: Selectable Rows + Row Click Dialog -->
+  <div class="card" style="position:relative"
+    data-signals:selectedCount="0"
+    data-signals:selectedIds="''"
+    data-signals:dlgName="''"
+    data-signals:dlgDept="''"
+    data-signals:dlgSalary="''"
+    data-signals:dlgOpen="false">
+    <h2>Checkbox Select + Row Click Dialog</h2>
+    <p>Use checkboxes to select rows. Click a row to open a detail dialog.</p>
+
+    <rocket-tabulator
+      columns='{{ columnsSelectJson | safe }}'
+      data='{{ employeesJson | safe }}'
+      height="320px"
+      selectable-rows="true"
+      enable-row-click="true"
+      data-on:tab-rows-selected="$selectedCount = evt.detail.rows.length; $selectedIds = evt.detail.rows.map(function(r){return r.id}).join(', ')"
+      data-on:tab-row-click="$dlgName = evt.detail.row.name; $dlgDept = evt.detail.row.department; $dlgSalary = '$' + Number(evt.detail.row.salary).toLocaleString(); $dlgOpen = true"
+    ></rocket-tabulator>
+
+    <div class="output">
+      Selected rows: <strong data-text="$selectedCount"></strong>
+      &nbsp;— IDs: <span data-text="$selectedIds || '(none)'"></span>
+    </div>
+
+    <div data-show="$dlgOpen" style="position:absolute;inset:0;background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;z-index:10;border-radius:8px">
+      <div style="background:#fff;border-radius:6px;padding:.75rem 1rem;width:220px;box-shadow:0 4px 16px rgba(0,0,0,.18);font-size:.82rem">
+        <h3 style="margin:0 0 .5rem;font-size:.9rem">Employee Detail</h3>
+        <p style="margin:.2rem 0"><strong>Name:</strong> <span data-text="$dlgName"></span></p>
+        <p style="margin:.2rem 0"><strong>Dept:</strong> <span data-text="$dlgDept"></span></p>
+        <p style="margin:.2rem 0"><strong>Salary:</strong> <span data-text="$dlgSalary"></span></p>
+        <button style="margin-top:.5rem;padding:.25rem .8rem;border:1px solid #ccc;border-radius:3px;cursor:pointer;background:#f0f0f0;font-size:.78rem"
+                data-on:click="$dlgOpen = false">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Example 4: Dynamic Data Swap -->
+  <div class="card">
+    <script type="application/json" data-signals>
+      {{ dynamicSignalsJson | safe }}
+    </script>
+    <script>
+      var _empAll = {{ employeesDoubleJson | safe }};
+      var _empActive = {{ activeDoubleJson | safe }};
+      var _empInactive = {{ inactiveDoubleJson | safe }};
+    </script>
+    <h2>Dynamic Data — Filter Active/Inactive</h2>
+    <p>Buttons swap data via the <code>data</code> prop (calls setData internally).</p>
+
+    <div style="margin-bottom:0.75rem">
+      <button data-on:click="$filterMode = 'all'; $empData = _empAll">All</button>
+      <button data-on:click="$filterMode = 'active'; $empData = _empActive">Active Only</button>
+      <button data-on:click="$filterMode = 'inactive'; $empData = _empInactive">Inactive Only</button>
+    </div>
+
+    <rocket-tabulator
+      columns='{{ columnsDynamicJson | safe }}'
+      data='{{ employeesJson | safe }}'
+      data-attr:data="$empData"
+      height="280px"
+    ></rocket-tabulator>
+
+    <div class="output">
+      Filter: <span data-text="$filterMode"></span> —
+      Rows: <span data-text="$empData ? JSON.parse($empData).length : 0"></span>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,301 @@
+{% extends "layout.njk" %}
+
+{% block datastar_script %}
+<script type="module" src="/public/js/datastar-pro.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<!-- Tom Select CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.1/dist/css/tom-select.css" />
+
+<style>
+  .rocket-wrapper {
+    max-width: 720px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    color: #e0e0e0;
+  }
+  .rocket-wrapper h1 { margin-bottom: 0.25rem; color: #fff; }
+  .subtitle { color: #aaa; margin-bottom: 2rem; }
+  .card {
+    background: #1e1e2e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .card h2 { margin-top: 0; font-size: 1.1rem; color: #e0e0e0; }
+  .card p { color: #aaa; font-size: 0.9rem; }
+  .output {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #2a2a3a;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: #ccc;
+  }
+  rocket-tom-select {
+    display: block;
+    margin: 1rem 0;
+  }
+  /* Tom Select dark mode overrides */
+  .ts-wrapper .ts-control {
+    background: #2a2a3a;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+  .ts-wrapper .ts-control input {
+    color: #e0e0e0;
+  }
+  .ts-wrapper .ts-control .item {
+    background: #3a3a5a;
+    color: #e0e0e0;
+    border-color: #555;
+  }
+  .ts-wrapper .ts-dropdown {
+    background: #1e1e2e;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+  .ts-wrapper .ts-dropdown .option {
+    color: #e0e0e0;
+  }
+  .ts-wrapper .ts-dropdown .option:hover,
+  .ts-wrapper .ts-dropdown .active {
+    background: #3a3a5a;
+    color: #fff;
+  }
+  .ts-wrapper .ts-dropdown .create {
+    color: #8ab4f8;
+  }
+  .ts-wrapper.focus .ts-control {
+    border-color: #6a6aaa;
+    box-shadow: 0 0 0 2px rgba(106, 106, 170, 0.3);
+  }
+</style>
+
+<div class="rocket-wrapper">
+  <h1>Rocket + Tom Select</h1>
+  <p class="subtitle">Datastar Rocket web component wrapping Tom Select</p>
+
+  <!-- Rocket component definition -->
+  <template data-rocket:rocket-tom-select
+    data-prop:placeholder="str='Select...'"
+    data-prop:max-items="int(min(1))"
+    data-prop:options="str"
+    data-prop:value="str"
+    data-prop:allow-create="bool"
+    data-prop:detail-field="str"
+    data-prop:search-url="str"
+    data-import:TomSelect__iife="https://cdn.jsdelivr.net/npm/tom-select@2.4.1/dist/js/tom-select.complete.min.js"
+  >
+    <script>
+      let tsInstance = null
+
+      function parseOptions() {
+        try {
+          const raw = '' + ($$options || '')
+          return raw ? JSON.parse(raw) : []
+        } catch(e) {
+          return []
+        }
+      }
+
+      function buildConfig() {
+        const opts = parseOptions()
+        const config = {
+          placeholder: '' + ($$placeholder || ''),
+          maxItems: +($$maxItems || 1),
+          maxOptions: null,
+          create: !!($$allowCreate) ? function(input, callback) { var item = { value: input, text: input }; callback(item) } : false,
+          plugins: {},
+          onInitialize: function () {
+            var v = '' + ($$value || '')
+            if (v) {
+              this.setValue(v.split(','), true)
+            }
+          },
+          onChange: function (val) {
+            try {
+              var strVal = Array.isArray(val) ? val.join(',') : ('' + (val || ''))
+              $$value = strVal
+              el.dispatchEvent(new CustomEvent('ts-change', {
+                detail: { value: strVal },
+                bubbles: true,
+                composed: true
+              }))
+            } catch(e) {
+              console.error('[TomSelect onChange]', e)
+            }
+          }
+        }
+
+        if (+($$maxItems || 1) > 1) {
+          config.plugins.remove_button = { title: 'Remove' }
+        }
+
+        if (opts.length > 0) {
+          config.options = opts
+          config.labelField = 'text'
+          config.valueField = 'value'
+          config.searchField = ['text']
+        }
+
+        var df = '' + ($$detailField || '')
+        if (df) {
+          var fields = df.split(',').map(function(f){ return f.trim() })
+          config.searchField = ['text'].concat(fields)
+          config.render = {
+            option: function(data, escape) {
+              var html = '<div style="display:flex;gap:.5rem">'
+                + '<span style="flex:1">' + escape(data.text) + '</span>'
+              for (var i = 0; i < fields.length; i++) {
+                html += '<span style="color:#888;font-size:.8em;min-width:5rem;text-align:right">' + escape(data[fields[i]] || '') + '</span>'
+              }
+              return html + '</div>'
+            },
+            item: function(data, escape) {
+              var parts = [escape(data.text)]
+              for (var i = 0; i < fields.length; i++) {
+                if (data[fields[i]]) parts.push(escape(data[fields[i]]))
+              }
+              return '<div>' + parts.join(' &middot; ') + '</div>'
+            }
+          }
+        }
+
+        var sUrl = '' + ($$searchUrl || '')
+        if (sUrl) {
+          config.load = function (query, callback) {
+            if (!query.length) return callback()
+            fetch(sUrl + '?q=' + encodeURIComponent(query))
+              .then(function(res) { return res.json() })
+              .then(function(data) { callback(data) })
+              .catch(function() { callback() })
+          }
+          config.labelField = 'text'
+          config.valueField = 'value'
+          config.searchField = ['text']
+        }
+
+        return config
+      }
+
+      effect(function() {
+        if (!$$selectEl || !TomSelect) return
+        if (tsInstance) return
+        tsInstance = new TomSelect($$selectEl, buildConfig())
+      })
+
+      var prevOptionsStr = ''
+      effect(function() {
+        if (!tsInstance) return
+        var optStr = '' + ($$options || '')
+        if (optStr !== prevOptionsStr) {
+          prevOptionsStr = optStr
+          try {
+            var parsed = optStr ? JSON.parse(optStr) : []
+            tsInstance.clearOptions()
+            tsInstance.addOptions(parsed)
+            tsInstance.refreshOptions(false)
+          } catch(e) {}
+        }
+      })
+
+      var lastSyncedValue = ''
+      effect(function() {
+        if (!tsInstance) return
+        var newVal = '' + ($$value || '')
+        if (newVal !== lastSyncedValue) {
+          lastSyncedValue = newVal
+          if (newVal) {
+            tsInstance.setValue(newVal.split(','), true)
+          } else {
+            tsInstance.clear(true)
+          }
+        }
+      })
+
+      onCleanup(function() {
+        if (tsInstance) {
+          tsInstance.destroy()
+          tsInstance = null
+        }
+      })
+    </script>
+
+    <select data-ref="selectEl"></select>
+  </template>
+
+  <!-- Example 1: Single Select with Static Options -->
+  <div class="card" data-signals:selectedFruit="''">
+    <h2>Single Select — Three-Column Dropdown</h2>
+    <p>Pick one fruit. Dropdown shows origin and season.</p>
+
+    <rocket-tom-select
+      placeholder="Pick a fruit..."
+      options='{{ fruitsJson | safe }}'
+      detail-field="origin,season"
+      data-on:ts-change="$selectedFruit = evt.detail.value"
+    ></rocket-tom-select>
+
+    <div class="output">
+      Selected: <span data-text="$selectedFruit || '(none)'"></span>
+    </div>
+  </div>
+
+  <!-- Example 2: Multi-Select with Tags -->
+  <div class="card" data-signals:selectedFruits="''">
+    <h2>Multi-Select — Tagging</h2>
+    <p>Pick up to 5 fruits. Includes remove buttons on tags.</p>
+
+    <rocket-tom-select
+      placeholder="Choose fruits..."
+      max-items="5"
+      options='{{ fruitsJson | safe }}'
+      data-on:ts-change="$selectedFruits = evt.detail.value"
+    ></rocket-tom-select>
+
+    <div class="output">
+      Selected: <span data-text="$selectedFruits || '(none)'"></span>
+    </div>
+  </div>
+
+  <!-- Example 3: Remote Search -->
+  <div class="card" data-signals:selectedUser="''">
+    <h2>Remote Search — Users</h2>
+    <p>Type to search users from the backend. Try "alice" or "grace".</p>
+
+    <rocket-tom-select
+      placeholder="Search users..."
+      search-url="/api_view/rocket-tomselect/search-users"
+      data-on:ts-change="$selectedUser = evt.detail.value"
+    ></rocket-tom-select>
+
+    <div class="output">
+      Selected: <span data-text="$selectedUser || '(none)'"></span>
+    </div>
+  </div>
+
+  <!-- Example 4: Create + Multi -->
+  <div class="card" data-signals:tags="''">
+    <h2>Creatable Tags</h2>
+    <p>Type to create new tags or select existing ones.</p>
+
+    <rocket-tom-select
+      placeholder="Add tags..."
+      max-items="10"
+      allow-create="true"
+      options='{{ tagsJson | safe }}'
+      data-on:ts-change="$tags = evt.detail.value"
+    ></rocket-tom-select>
+
+    <div class="output">
+      Tags: <span data-text="$tags || '(none)'"></span>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -2,6 +2,8 @@
 
 A full-stack CRUD application demonstrating [Datastar](https://data-star.dev) with Fastify 5 and Node.js 24.
 
+Live Demo: [demo on render](https://datastar-fastify-example-book.onrender.com/)
+
 ## Features
 
 - Full CRUD operations with real-time updates
@@ -12,6 +14,8 @@ A full-stack CRUD application demonstrating [Datastar](https://data-star.dev) wi
 - Toast notifications
 - Basic Datastar examples
 - Port of Bad Apple!
+- Rocket Component for Tom Select
+- Rocket Component for Tabulator Data Grids
 ## Quick Start
 
 ### Prerequisites
